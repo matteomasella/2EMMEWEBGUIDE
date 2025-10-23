@@ -7,23 +7,24 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'ottanio': '#004D54',
-              'ottanio-light': '#BFEBFF',
-              'magenta': '#DB4F61',
-              'magenta-light': '#F5C9D1',
-              'verde': '#54C4A6',
-              'verde-light': '#CCEDE5',
-              'bianco': '#FFFFFF',
-              'nero': '#000000',
-              'grigio-chiaro': '#f9fafb',
+        // Configurazione Tailwind: colori personalizzati
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ottanio': '#004D54',
+                        'ottanio-light': '#BFEBFF',
+                        'magenta': '#DB4F61',
+                        'magenta-light': '#F5C9D1',
+                        'verde': '#54C4A6',
+                        'verde-light': '#CCEDE5',
+                        'bianco': '#FFFFFF',
+                        'nero': '#000000',
+                        'grigio-chiaro': '#f9fafb',
+                    }
+                }
             }
-          }
         }
-      }
     </script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,10 +32,1062 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         html { scroll-behavior: smooth; }
-        body { font-family: 'Plus-Jakarta-Sans', sans-serif; background-color: #004D54; }
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        body { 
+            font-family: 'Plus-Jakarta-Sans', sans-serif; 
+            background-color: #004D54; 
+            /* Assicuriamo che il body sia almeno alto quanto la finestra */
+            min-height: 100vh;
+        }
+        .page { 
+            display: none; 
+            /* Aggiunge z-index per contesto di stacking */
+            position: relative;
+            z-index: 1; 
+        }
+        .page.active { 
+            display: block; 
+            animation: fadeIn 0.3s ease-in-out; 
+        }
         @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 12px rgba(0,0,0,0.2); }
+        .lang-btn.active { background-color: #54C4A6; color: #FFFFFF; font-weight: 700; }
+        .list-disc { list-style-type: none; padding-left: 0; }
+        .list-disc li { position: relative; padding-left: 1.5em; margin-bottom: 0.5rem; }
+        .list-disc li::before { content: '•'; position: absolute; left: 0.5em; color: #54C4A6; font-weight: bold; }
+
+        /* MODAL E CORREZIONI GRAFICHE */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* z-index alto per sovrapporsi a tutto */
+            z-index: 1000; 
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 480px;
+            color: #004D54;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            /* Assicurati che sia sopra l'overlay */
+            position: relative; 
+            z-index: 1001; 
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #ccc;
+            cursor: pointer;
+            z-index: 1002;
+        }
+        .ai-response {
+            background-color: #f9fafb;
+            border-left: 4px solid #54C4A6;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            max-height: 250px;
+            overflow-y: auto;
+            /* Aggiunta per il testo molto lungo */
+            overflow-wrap: break-word; 
+        }
+        .loader {
+            border: 4px solid #CCEDE5;
+            border-top: 4px solid #54C4A6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-ottanio">
+
+    <div id="app-container" class="max-w-md mx-auto min-h-dvh bg-ottanio">
+
+        <div id="welcome" class="page active p-6">
+            <div class="flex justify-end mb-4" id="lang-switcher">
+                <button class="lang-btn active px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm" data-lang="it">IT</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="en">EN</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="fr">FR</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="de">DE</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="es">ES</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="pt">PT</button>
+            </div>
+            <header class="text-center mb-6">
+                <div class="flex justify-center items-center gap-4 mb-2">
+                    <img src="logosfottanio.png" class="w-24 h-24 mb-4" alt="Logo 2EMME">
+                </div>
+                <h1 class="text-3xl font-bold text-bianco" id="welcome-title"></h1>
+                <p class="text-ottanio-light opacity-80" id="welcome-subtitle"></p>
+            </header>
+            
+            <div class="mb-6">
+                <input type="text" id="search-input" class="w-full p-3 rounded-lg border-2 bg-white/10 border-ottanio-light/20 focus:outline-none focus:border-verde text-bianco placeholder-ottanio-light/70">
+            </div>
+
+            <main class="space-y-4" id="welcome-buttons"></main>
+        </div>
+
+        <div id="guide-content" class="page p-6"></div>
+        <div id="search-results" class="page p-6"></div>
+
+    </div>
+    
+    <div id="ai-modal" class="modal-overlay">
+        <div class="modal-content relative">
+            <button onclick="closeAiModal()" class="modal-close-btn">&times;</button>
+            <div id="ai-modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE & CONSTANTS ---
+        let currentGuide = null;
+        let currentPage = null;
+        let currentLang = 'it';
+        const logoUrl = "https://i.ibb.co/6g2xYfW/logosfottanio.png";
+        // API KEY fittizia per Gemini - Da sostituire con una chiave reale se si vuole testare l'AI
+        const GEMINI_API_KEY = "AIzaSyCG10cNGxbcY4GCkOId_INJ_NWgaDRM5Sg";
+
+
+        // --- UI & TRANSLATION DATA ---
+        const welcomeText = {
+            it: { title: "Guida a Milano", subtitle: "Scegli l'esperienza perfetta per te", ristoranti: "🍽️ Guida Ristoranti", autunno: "🍂 Guida Autunno", arte: "🎨 Arte e Musei", museum4free: "🖼️ #Museum4Free", nolo: "🗺️ Mappa di NoLo", argonne: "🧭 Scopri Argonne", servizi: "☎️ Intorno a te", sicurezza: "⚠️ Guida alla Sicurezza", mobilita: "🚇 Guida alla Mobilità", searchPlaceholder: "Cerca ristoranti, eventi..." },
+            en: { title: "Milan Guide", subtitle: "Choose your perfect experience", ristoranti: "🍽️ Restaurant Guide", autunno: "🍂 Autumn Guide", arte: "🎨 Art and Museums", museum4free: "🖼️ #Museum4Free", nolo: "🗺️ NoLo Map", argonne: "🧭 Discover Argonne", servizi: "☎️ Around You", sicurezza: "⚠️ Safety Guide", mobilita: "🚇 Mobility Guide", searchPlaceholder: "Search restaurants, events..." },
+            fr: { title: "Guide de Milan", subtitle: "Choisissez votre expérience parfaite", ristoranti: "🍽️ Guide des Restaurants", autunno: "🍂 Guide d'Automne", arte: "🎨 Art et Musées", museum4free: "🖼️ #MuséeGratuit", nolo: "🗺️ Carte de NoLo", argonne: "🧭 Découvrir Argonne", servizi: "☎️ Autour de vous", sicurezza: "⚠️ Guide de Sécurité", mobilita: "🚇 Guide de Mobilité", searchPlaceholder: "Rechercher restaurants, événements..." },
+            de: { title: "Mailand Führer", subtitle: "Wählen Sie Ihr perfektes Erlebnis", ristoranti: "🍽️ Restaurantführer", autunno: "🍂 Herbstführer", arte: "🎨 Kunst und Museen", museum4free: "🖼️ #GratisMuseum", nolo: "🗺️ NoLo Karte", argonne: "🧭 Argonne entdecken", servizi: "☎️ Um Sie herum", sicurezza: "⚠️ Sicherheitsführer", mobilita: "🚇 Mobilitätsführer", searchPlaceholder: "Suchen Sie Restaurants, Veranstaltungen..." },
+            es: { title: "Guía de Milán", subtitle: "Elija su experiencia perfecta", ristoranti: "🍽️ Guía de Restaurantes", autunno: "🍂 Guía de Otoño", arte: "🎨 Arte y Museos", museum4free: "🖼️ #MuseoGratis", nolo: "🗺️ Mapa de NoLo", argonne: "🧭 Descubre Argonne", servizi: "☎️ Alrededor de usted", sicurezza: "⚠️ Guía de Seguridad", mobilita: "🚇 Guía de Movilidad", searchPlaceholder: "Buscar restaurantes, eventos..." },
+            pt: { title: "Guia de Milão", subtitle: "Escolha a sua experiência perfeita", ristoranti: "🍽️ Guia de Restaurantes", autunno: "🍂 Guia de Outono", arte: "🎨 Arte e Museus", museum4free: "🖼️ #MuseuGrátis", nolo: "🗺️ Mapa de NoLo", argonne: "🧭 Descubra Argonne", servizi: "☎️ Ao seu redor", sicurezza: "⚠️ Guia de Segurança", mobilita: "🚇 Guia de Mobilidade", searchPlaceholder: "Pesquisar restaurantes, eventos..." }
+        };
+
+        const LABELS = {
+            it: { 
+                backToGuides: "← Torna alle guide", goBack: "← Torna indietro", noResults: "Nessun risultato trovato per", resultsFor: "Risultati per", guideContext: "Guida", address: "Indirizzo", tel: "Tel", sitoWeb: "Sito Web", visitWebsite: "Visita il sito", orari: "Orari", 
+                ai_modal_title: "✨ Chiedi all'Assistente AI", ai_consulate_title: "✨ Assistente Consolare AI", 
+                ai_prompt_1: "Com'è l'atmosfera?", ai_prompt_2: "Pianifica una serata", ai_prompt_3: "Crea un itinerario qui vicino", 
+                ai_consulate_prompt_1: "Documenti per passaporto rubato?", ai_consulate_prompt_2: "Come registro il mio viaggio?", ai_consulate_prompt_3: "Scrivi un'email per appuntamento", 
+                createArtTourButton: "✨ Crea il mio tour d'arte", artTourModalTitle: "Pianificatore Tour d'Arte", artTourModalSubtitle: "Seleziona i luoghi che vuoi visitare (min. 2)", 
+                generateTourButton: "Genera Itinerario", artTourError: "Seleziona almeno due luoghi per creare un tour.", 
+                artTourPrompt_part1: "Sei un'esperta guida turistica di Milano. Crea un itinerario a piedi logico e ottimizzato per mezza giornata che includa le seguenti tappe:", 
+                artTourPrompt_part2: "Per ogni tappa, fornisci una breve descrizione di cosa non perdere. Suggerisci anche una pausa caffè in un locale carino lungo il percorso. Rispondi in italiano con un tono amichevole." 
+            },
+            en: { 
+                backToGuides: "← Back to guides", goBack: "← Go back", noResults: "No results found for", resultsFor: "Results for", guideContext: "Guide", address: "Address", tel: "Phone", sitoWeb: "Website", visitWebsite: "Visit website", orari: "Hours", 
+                ai_modal_title: "✨ Ask the AI Assistant", ai_consulate_title: "✨ Consular AI Assistant", 
+                ai_prompt_1: "What's the atmosphere like?", ai_prompt_2: "Plan an evening", ai_prompt_3: "Create a nearby itinerary", 
+                ai_consulate_prompt_1: "Docs for stolen passport?", ai_consulate_prompt_2: "How to register my trip?", ai_consulate_prompt_3: "Draft an appointment email", 
+                createArtTourButton: "✨ Create my art tour", artTourModalTitle: "Art Tour Planner", artTourModalSubtitle: "Select the places you want to visit (min. 2)", 
+                generateTourButton: "Generate Itinerary", artTourError: "Select at least two places to create a tour.", 
+                artTourPrompt_part1: "You are an expert tour guide in Milan. Create a logical and optimized half-day walking tour that includes the following stops:", 
+                artTourPrompt_part2: "For each stop, provide a brief description of what not to miss. Also, suggest a nice café for a break along the way. Respond in English with a friendly tone." 
+            },
+            fr: { 
+                backToGuides: "← Retour aux guides", goBack: "← Retour", noResults: "Aucun résultat trouvé pour", resultsFor: "Résultats pour", guideContext: "Guide", address: "Adresse", tel: "Tél", sitoWeb: "Site Web", visitWebsite: "Visitez le site", orari: "Horaires", 
+                ai_modal_title: "✨ Demandez à l'Assistant IA", ai_consulate_title: "✨ Assistant Consulaire IA", 
+                ai_prompt_1: "Quelle est l'ambiance?", ai_prompt_2: "Planifier une soirée", ai_prompt_3: "Créer un itinéraire à proximité", 
+                ai_consulate_prompt_1: "Papiers pour passeport volé?", ai_consulate_prompt_2: "Comment enregistrer mon voyage?", ai_consulate_prompt_3: "Rédiger un email de rdv", 
+                createArtTourButton: "✨ Créer mon tour d'art", artTourModalTitle: "Planificateur de Tour d'Art", artTourModalSubtitle: "Sélectionnez les lieux que vous souhaitez visiter (min. 2)", 
+                generateTourButton: "Générer l'itinéraire", artTourError: "Sélectionnez au moins deux lieux pour créer un tour.", 
+                artTourPrompt_part1: "Vous êtes un guide touristique expert à Milan. Créez un itinéraire à pied logique et optimisé d'une demi-journée comprenant les arrêts suivants:", 
+                artTourPrompt_part2: "Pour chaque arrêt, donnez une brève description de ce qu'il ne faut pas manquer. Suggérez également un café sympa pour une pause en cours de route. Répondez en français sur un ton amical." 
+            },
+            de: { 
+                backToGuides: "← Zurück zu den Führern", goBack: "← Zurück", noResults: "Keine Ergebnisse für", resultsFor: "Ergebnisse für", guideContext: "Führer", address: "Adresse", tel: "Tel", sitoWeb: "Webseite", visitWebsite: "Webseite besuchen", orari: "Öffnungszeiten", 
+                ai_modal_title: "✨ Fragen Sie den KI-Assistenten", ai_consulate_title: "✨ KI-Konsularassistent", 
+                ai_prompt_1: "Wie ist die Atmosphäre?", ai_prompt_2: "Planen Sie einen Abend", ai_prompt_3: "Erstellen Sie eine Route in der Nähe", 
+                ai_consulate_prompt_1: "Papiere für gestohlenen Pass?", ai_consulate_prompt_2: "Wie registriere ich meine Reise?", ai_consulate_prompt_3: "Termin-E-Mail entwerfen", 
+                createArtTourButton: "✨ Erstelle meine Kunsttour", artTourModalTitle: "Kunsttour-Planer", artTourModalSubtitle: "Wählen Sie die Orte aus, die Sie besuchen möchten (mind. 2)", 
+                generateTourButton: "Route generieren", artTourError: "Wählen Sie mindestens zwei Orte aus, um eine Tour zu erstellen.", 
+                artTourPrompt_part1: "Sie sind ein erfahrener Reiseleiter in Mailand. Erstellen Sie eine logische und optimierte halbtägige Wanderroute, die die folgenden Stationen umfasst:", 
+                artTourPrompt_part2: "Geben Sie für jede Station eine kurze Beschreibung der wichtigsten Sehenswürdigkeiten. Schlagen Sie auch ein nettes Café für eine Pause unterwegs vor. Antworten Sie auf Deutsch in einem freundlichen Ton." 
+            },
+            es: { 
+                backToGuides: "← Volver a las guías", goBack: "← Volver", noResults: "No se encontraron resultados para", resultsFor: "Resultados para", guideContext: "Guía", address: "Dirección", tel: "Tel", sitoWeb: "Sitio Web", visitWebsite: "Visitar sitio web", orari: "Horarios", 
+                ai_modal_title: "✨ Pregúntale al Asistente de IA", ai_consulate_title: "✨ Asistente Consular de IA", 
+                ai_prompt_1: "¿Cómo es el ambiente?", ai_prompt_2: "Planificar una noche", ai_prompt_3: "Crear un itinerario cercano", 
+                ai_consulate_prompt_1: "¿Documentos por pasaporte robado?", ai_consulate_prompt_2: "¿Cómo registro mi viaje?", ai_consulate_prompt_3: "Redactar email para cita", 
+                createArtTourButton: "✨ Crea mi tour de arte", artTourModalTitle: "Planificador de Tour de Arte", artTourModalSubtitle: "Selecciona los lugares que quieres visitar (mín. 2)", 
+                generateTourButton: "Generar Itinerario", artTourError: "Selecciona al menos dos lugares para crear un recorrido.", 
+                artTourPrompt_part1: "Eres un guía turístico experto en Milán. Crea un itinerario a pie lógico y optimizado de medio día que incluya las siguientes paradas:", 
+                artTourPrompt_part2: "Para cada parada, proporciona una breve descripción de lo que no te puedes perder. Sugiere también una cafetería agradable para un descanso en el camino. Responde en español en un tono amigable." 
+            },
+            pt: { 
+                backToGuides: "← Voltar aos guias", goBack: "← Voltar", noResults: "Nenhum resultado encontrado para", resultsFor: "Resultados para", guideContext: "Guia", address: "Endereço", tel: "Tel", sitoWeb: "Site", visitWebsite: "Visitar site", orari: "Horários", 
+                ai_modal_title: "✨ Pergunte ao Assistente de IA", ai_consulate_title: "✨ Assistente Consular de IA", 
+                ai_prompt_1: "Como é o ambiente?", ai_prompt_2: "Planejar uma noite", ai_prompt_3: "Criar um roteiro próximo", 
+                ai_consulate_prompt_1: "Documentos para passaporte roubado?", ai_consulate_prompt_2: "Como registrar minha viagem?", ai_consulate_prompt_3: "Escrever e-mail para agendamento", 
+                createArtTourButton: "✨ Criar meu tour de arte", artTourModalTitle: "Planificador de Tour de Arte", artTourModalSubtitle: "Selecione os lugares que você quer visitar (mín. 2)", 
+                generateTourButton: "Gerar Roteiro", artTourError: "Selecione pelo menos dois lugares para criar um tour.", 
+                artTourPrompt_part1: "Você é um guia turístico experiente em Milão. Crie um roteiro a pé lógico e otimizado de meio dia que inclua as seguintes paradas:", 
+                artTourPrompt_part2: "Para cada parada, forneça uma breve descrição do que não perder. Sugira também um café agradável para uma pausa no caminho. Responda em português com um tom amigável." 
+            }
+        };
+
+        // --- COMPLETE GUIDES DATA ---
+        let allGuidesData = {
+            ristoranti: {
+                it: {
+                    homepage: { title: "Guida Ristoranti", subtitle: "I migliori locali scelti per te", buttons: { tradizionali: "Tradizionali", etnici: "Etnici", moda: "Alla Moda", pizzerie: "Pizzerie", vegani: "Vegani/Vegetariani", suggerimenti: "Itinerari Suggeriti" } },
+                    pages: {
+                        tradizionali: { title: "Ristoranti Tradizionali", infoLabel: "Informazioni", activities: [ { name: "Al Garghet", details: "Cotoletta alla Milanese spessa con l'osso. Atmosfera rurale e romantica, ideale per un'occasione speciale.", meta: { prezzo: "50-70€", address: "Via Selvanesco, 36, 20141 Milano" } }, { name: "La Pobbia 1850", details: "Risotto giallo con Ossobuco in gremolada. Bib Gourmand Michelin. Un'istituzione storica per la cucina milanese autentica.", meta: { prezzo: "60-80€", address: "Via Gallarate, 92, 20151 Milano" } }, { name: "Premiata Trattoria Arlati", details: "Ossobuco con riso al salto. Ambiente artistico e bohémien unico, con solidi classici a prezzi vantaggiosi.", meta: { prezzo: "45-60€", address: "Via Alberto Nota, 47, 20126 Milano" } }, { name: "Antica Trattoria della Pesa", details: "Risotto alla milanese, Cotoletta. Storica trattoria milanese che offre un'esperienza tradizionale e affidabile.", meta: { prezzo: "55-90€", address: "Viale Pasubio, 10, 20154 Milano" } }, { name: "Trippa", details: "Piatti a base di quinto quarto, menù stagionale. Osteria moderna molto richiesta, apprezzata per la creatività e la qualità delle materie prime.", meta: { prezzo: "40-60€", address: "Via Giorgio Vasari, 1, 20135 Milano" } } ] },
+                        etnici: { title: "Ristoranti Etnici", infoLabel: "Informazioni", activities: [ { name: "Ichikawa", details: "Menù Omakase. Giapponese (Alta Cucina). Per veri intenditori.", meta: { prezzo: "120-150€+", address: "Via Lazzaro Papi, 18, 20135 Milano" } }, { name: "Shiro Poporoya", details: "Chirashi. Giapponese (Tradizionale). Un'istituzione leggendaria.", meta: { prezzo: "35-50€", address: "Via Bartolomeo Eustachi, 20, 20129 Milano" } }, { name: "Pacifico", details: "Ceviche Puro, Cocktail al Pisco. Peruviana (Nikkei). Trendy, cucina innovativa.", meta: { prezzo: "70-90€", address: "Via della Moscova, 29, 20121 Milano" } }, { name: "Serendib", details: "Menù Degustazione. Indiana / Sri Lankese. Michelin Bib Gourmand.", meta: { prezzo: "30-40€", address: "Via Pontida, 2, 20121 Milano" } }, { name: "Tara", details: "Tandoori Misto, Chicken Tikka Masala. Indiana. Affidabile e con ottime recensioni.", meta: { prezzo: "20-25€", address: "Via Domenico Cirillo, 16, 20154 Milano" } }, { name: "Mezè", details: "Mezè da condividere, Pane Saj. Libanese. Concept autentico e moderno.", meta: { prezzo: "50-70€", address: "Via Sottocorno 19/a, 20129 Milano" } }, { name: "Warsà", details: "Zighinì (piatto conviviale). Eritrea. Storico e mitico locale eritreo.", meta: { prezzo: "25-35€", address: "Via Melzo, 16, 20129 Milano" } } ] },
+                        moda: { title: "Ristoranti 'Alla Moda'", infoLabel: "Informazioni", activities: [ { name: "Enrico Bartolini al Mudec", details: "Menù Degustazione. 3 Stelle Michelin. Il vertice assoluto della gastronomia milanese.", meta: { prezzo: "240€+", address: "Via Tortona, 56, 20144 Milano" } }, { name: "Cracco in Galleria", details: "Cucina d'Autore. 1 Stella Michelin. Location iconica e innovazione.", meta: { prezzo: "210€", address: "Galleria Vittorio Emanuele II, 20121 Milano" } }, { name: "Berton", details: "Cucina Moderna. 1 Stella Michelin. Eleganza minimalista e cucina tecnica.", meta: { prezzo: "180€", address: "Via Mike Bongiorno, 13, 20124 Milano" } }, { name: "Autem*", details: "Cucina di Mercato (Carta Bianca). 1 Stella Michelin. Approccio moderno e dinamico.", meta: { prezzo: "95€+ (à la carte)", address: "Via Serviliano Lattuada, 2, 20135 Milano" } }, { name: "Stendhal Milano", details: "Bistrot Milanese / Classici Rivisitati. Hotspot della Fashion Week, atmosfera chic.", meta: { prezzo: "60-90€ (à la carte)", address: "Via Ancona / Via San Marco, 20121 Milano" } } ] },
+                        pizzerie: { title: "Pizzerie", infoLabel: "Informazioni", activities: [ { name: "Assaje", details: "Pizza 'Assaje' (zucca e gamberi). Napoletana Tradizionale. Popolare e vivace.", meta: { prezzo: "12-18€", address: "Piazzale Segrino, 1, 20159 Milano" } }, { name: "Dry Milano", details: "The Bengal Shrimp, 5 Formaggi. Gourmet & Cocktail Pairing. Icona di stile.", meta: { prezzo: "16-28€", address: "Via Solferino, 33, 20121 Milano" } }, { name: "Crosta", details: "Impasti di alta qualità. Contemporanea / Da Panificio. Gambero Rosso (Tre Spicchi).", meta: { prezzo: "15-25€", address: "Via Felice Bellotti, 13, 20129 Milano" } }, { name: "Giolina", details: "Topping di alta qualità. Napoletana Contemporanea. Ambiente di design.", meta: { prezzo: "14-20€", address: "Via Felice Bellotti, 6, 20129 Milano" } }, { name: "Lievità", details: "Leggerezza e digeribilità. Napoletana Gourmet. Ricerca sugli impasti.", meta: { prezzo: "13-19€", address: "Via Carlo Ravizza, 11, 20149 Milano" } }, { name: "Gino Sorbillo", details: "Margherita. Classica Napoletana. Una vera istituzione.", meta: { prezzo: "10-15€", address: "Largo Corsia dei Servi, 11, 20122 Milano" } } ] },
+                        vegani: { title: "Vegani e Vegetariani", infoLabel: "Informazioni", activities: [ { name: "Joia", details: "Alta cucina vegetariana. Unica stella Michelin vegetariana in Europa. Un'esperienza gastronomica indimenticabile guidata dallo chef Pietro Leemann.", meta: { prezzo: "100€+", address: "Via Panfilo Castaldi, 18, 20124 Milano" } }, { name: "Linfa", details: "Fine dining vegetale. Eleganza e creatività in ogni piatto. Un'atmosfera sofisticata perfetta per un'occasione speciale.", meta: { prezzo: "60-80€", address: "Via Bergognone, 24, 20144 Milano" } }, { name: "Soulgreen", details: "Plant-based. Locale di design in zona Porta Nuova. Ideale per un pasto sano, gustoso e molto 'instagrammabile'.", meta: { prezzo: "25-40€", address: "Piazzale Principessa Clotilde, 20121 Milano" } }, { name: "Flower Burger", details: "Burger vegani colorati e patatine speziate. Divertente, informale e incredibilmente saporito. Un concept unico che ha conquistato la città.", meta: { prezzo: "15-25€", address: "Viale Vittorio Veneto, 10, 20124 Milano" } } ] },
+                        suggerimenti: { title: "Itinerari Suggeriti", itineraries: [ { title: "Un Giorno da Milanese DOC", description: "Un'immersione nella tradizione. Iniziate con un pranzo da La Pobbia 1850 per assaporare i classici in un contesto storico. Per cena, scegliete l'atmosfera artistica della Premiata Trattoria Arlati, dove la storia meneghina incontra la cultura." }, { title: "Giro del Mondo in 48 Ore", description: "Un weekend cosmopolita. Il primo giorno, dedicatevi all'Asia: un pranzo da Shiro Poporoya per un chirashi leggendario e una cena da Ichikawa per un'esperienza omakase indimenticabile. Il secondo giorno, esplorate altri continenti: un pranzo conviviale da Mezè per assaporare la cucina libanese e una cena vibrante da Pacifico per scoprire la fusione Nikkei." }, { title: "Serata Glamour", description: "Per una notte sotto i riflettori. La scelta d'elezione è una cena da Autem*, dove l'innovazione dello chef Natalini si sposa con un'eleganza moderna. In alternativa, per un'atmosfera da salotto buono nel cuore di Brera, Stendhal Milano è una garanzia." }, { title: "Il Pellegrinaggio della Pizza", description: "Un tour comparativo per veri appassionati. Iniziate con l'autenticità napoletana di Assaje per pranzo. Per cena, immergetevi nell'esperienza unica di pizza e cocktail da Dry Milano. Il giorno seguente, puntate all'eccellenza assoluta degli impasti con una visita da Crosta." } ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "Restaurant Guide", subtitle: "The best places chosen for you", buttons: { tradizionali: "Traditional", etnici: "Ethnic", moda: "Trendy", pizzerie: "Pizzerias", vegani: "Vegan/Vegetarian", suggerimenti: "Suggested Itineraries" } },
+                    pages: {
+                        tradizionali: { title: "Traditional Restaurants", infoLabel: "Info", activities: [ { name: "Al Garghet", details: "Thick bone-in Cotoletta alla Milanese. Rustic and romantic atmosphere, ideal for a special occasion.", meta: { prezzo: "50-70€", address: "Via Selvanesco, 36, 20141 Milan" } }, { name: "La Pobbia 1850", details: "Yellow Risotto with Ossobuco in gremolada. Michelin Bib Gourmand. A historic institution for authentic Milanese cuisine.", meta: { prezzo: "60-80€", address: "Via Gallarate, 92, 20151 Milan" } }, { name: "Premiata Trattoria Arlati", details: "Ossobuco with risotto al salto. Unique artistic and bohemian setting, with solid classics at good prices.", meta: { prezzo: "45-60€", address: "Via Alberto Nota, 47, 20126 Milan" } }, { name: "Antica Trattoria della Pesa", details: "Risotto alla milanese, Cotoletta. Historic Milanese trattoria offering a reliable and traditional experience.", meta: { prezzo: "55-90€", address: "Viale Pasubio, 10, 20154 Milan" } }, { name: "Trippa", details: "Offal-based dishes, seasonal menu. A very popular modern osteria, appreciated for its creativity and quality ingredients.", meta: { prezzo: "40-60€", address: "Via Giorgio Vasari, 1, 20135 Milan" } } ] },
+                        etnici: { title: "Ethnic Restaurants", infoLabel: "Info", activities: [ { name: "Ichikawa", details: "Omakase Menu. Japanese (Haute Cuisine). For true connoisseurs.", meta: { prezzo: "120-150€+", address: "Via Lazzaro Papi, 18, 20135 Milan" } }, { name: "Shiro Poporoya", details: "Chirashi. Japanese (Traditional). A legendary institution.", meta: { prezzo: "35-50€", address: "Via Bartolomeo Eustachi, 20, 20129 Milan" } }, { name: "Pacifico", details: "Pure Ceviche, Pisco Cocktail. Peruvian (Nikkei). Trendy, innovative cuisine.", meta: { prezzo: "70-90€", address: "Via della Moscova, 29, 20121 Milan" } }, { name: "Serendib", details: "Tasting Menu. Indian / Sri Lankan. Michelin Bib Gourmand.", meta: { prezzo: "30-40€", address: "Via Pontida, 2, 20121 Milan" } }, { name: "Tara", details: "Mixed Tandoori, Chicken Tikka Masala. Indian. Reliable with excellent reviews.", meta: { prezzo: "20-25€", address: "Via Domenico Cirillo, 16, 20154 Milan" } }, { name: "Mezè", details: "Mezè to share, Saj Bread. Lebanese. Authentic and modern concept.", meta: { prezzo: "50-70€", address: "Via Sottocorno 19/a, 20129 Milan" } }, { name: "Warsà", details: "Zighinì (communal dish). Eritrean. A historic and mythical Eritrean restaurant.", meta: { prezzo: "25-35€", address: "Via Melzo, 16, 20129 Milan" } } ] },
+                        moda: { title: "Trendy Restaurants", infoLabel: "Info", activities: [ { name: "Enrico Bartolini al Mudec", details: "Tasting Menu. 3 Michelin Stars. The absolute peak of Milanese gastronomy.", meta: { prezzo: "240€+", address: "Via Tortona, 56, 20144 Milan" } }, { name: "Cracco in Galleria", details: "Signature Cuisine. 1 Michelin Star. Iconic location and innovation.", meta: { prezzo: "210€", address: "Galleria Vittorio Emanuele II, 20121 Milan" } }, { name: "Berton", details: "Modern Cuisine. 1 Michelin Star. Minimalist elegance and technical cuisine.", meta: { prezzo: "180€", address: "Via Mike Bongiorno, 13, 20124 Milan" } }, { name: "Autem*", details: "Market Cuisine (Carte Blanche). 1 Michelin Star. Modern and dynamic approach.", meta: { prezzo: "95€+ (à la carte)", address: "Via Serviliano Lattuada, 2, 20135 Milan" } }, { name: "Stendhal Milano", details: "Milanese Bistrot / Reimagined Classics. Fashion Week hotspot, chic atmosphere.", meta: { prezzo: "60-90€ (à la carte)", address: "Via Ancona / Via San Marco, 20121 Milan" } } ] },
+                        pizzerie: { title: "Pizzerias", infoLabel: "Info", activities: [ { name: "Assaje", details: "Pizza 'Assaje' (pumpkin and shrimp). Traditional Neapolitan. Popular and lively.", meta: { prezzo: "12-18€", address: "Piazzale Segrino, 1, 20159 Milan" } }, { name: "Dry Milano", details: "The Bengal Shrimp, 5 Cheeses. Gourmet & Cocktail Pairing. A style icon.", meta: { prezzo: "16-28€", address: "Via Solferino, 33, 20121 Milan" } }, { name: "Crosta", details: "High-quality doughs. Contemporary / Bakery-style. Gambero Rosso (Tre Spicchi).", meta: { prezzo: "15-25€", address: "Via Felice Bellotti, 13, 20129 Milan" } }, { name: "Giolina", details: "High-quality toppings. Contemporary Neapolitan. Designer ambiance.", meta: { prezzo: "14-20€", address: "Via Felice Bellotti, 6, 20129 Milan" } }, { name: "Lievità", details: "Lightness and digestibility. Gourmet Neapolitan. Research on doughs.", meta: { prezzo: "13-19€", address: "Via Carlo Ravizza, 11, 20149 Milan" } }, { name: "Gino Sorbillo", details: "Margherita. Classic Neapolitan. A true institution.", meta: { prezzo: "10-15€", address: "Largo Corsia dei Servi, 11, 20122 Milan" } } ] },
+                        vegani: { title: "Vegan & Vegetarian", infoLabel: "Info", activities: [ { name: "Joia", details: "Haute vegetarian cuisine. The only vegetarian Michelin star in Europe. An unforgettable gastronomic experience led by chef Pietro Leemann.", meta: { prezzo: "100€+", address: "Via Panfilo Castaldi, 18, 20124 Milan" } }, { name: "Linfa", details: "Plant-based fine dining. Elegance and creativity in every dish. A sophisticated atmosphere perfect for a special occasion.", meta: { prezzo: "60-80€", address: "Via Bergognone, 24, 20144 Milan" } }, { name: "Soulgreen", details: "Plant-based. Designer venue in Porta Nuova. Ideal for a healthy, tasty, and very 'instagrammable' meal.", meta: { prezzo: "25-40€", address: "Piazzale Principessa Clotilde, 20121 Milan" } }, { name: "Flower Burger", details: "Colorful vegan burgers and spiced fries. Fun, informal, and incredibly flavorful. A unique concept that has taken the city by storm.", meta: { prezzo: "15-25€", address: "Viale Vittorio Veneto, 10, 20124 Milan" } } ] },
+                        suggerimenti: { title: "Suggested Itineraries", itineraries: [ { title: "A Day as a True Milanese", description: "An immersion in tradition. Start with a lunch at La Pobbia 1850 to savor the classics in a historic setting. For dinner, choose the artistic atmosphere of Premiata Trattoria Arlati, where Milanese history meets culture." }, { title: "World Tour in 48 Hours", description: "A cosmopolitan weekend. On day one, focus on Asia: a legendary chirashi lunch at Shiro Poporoya and an unforgettable omakase dinner at Ichikawa. On day two, explore other continents: a communal Lebanese lunch at Mezè and a vibrant dinner at Pacifico to discover Nikkei fusion." }, { title: "Glamorous Evening", description: "For a night in the spotlight. The top choice is a dinner at Autem*, where Chef Natalini's innovation meets modern elegance. Alternatively, for a chic lounge atmosphere in the heart of Brera, Stendhal Milano is a sure bet." }, { title: "The Pizza Pilgrimage", description: "A comparative tour for true enthusiasts. Start with the Neapolitan authenticity of Assaje for lunch. For dinner, dive into the unique experience of pizza and cocktails at Dry Milano. The next day, aim for the absolute excellence of doughs with a visit to Crosta." } ] }
+                    }
+                },
+                fr: {}, de: {}, es: {}, pt: {}
+            },
+            autunno: {
+                it: {
+                    homepage: { title: "Guida Autunno", subtitle: "Eventi e sapori della stagione a Milano.", buttons: { fiere: "🎪 Fiere e Congressi", mostre: "🏛️ Mostre", concerti: "🎵 Concerti", enogastronomici: "🍷 Eventi Enogastronomici", altri: "✨ Altri Eventi" } },
+                    pages: {
+                        fiere: { title: "Fiere e Congressi", infoLabel: "Dettagli", activities: [ { name: "Salone Franchising Milano", details: "Fiera dedicata al mondo del franchising, un'ottima opportunità per chi desidera avviare una nuova attività in proprio.", dates: "2 - 4 Ottobre 2025", address: "MiCo - Milano Congressi" }, { name: "HostMilano 2025", details: "Un evento di rilevanza internazionale per i settori della ristorazione, dell'ospitalità e dell'accoglienza professionale.", dates: "17 - 21 Ottobre 2025", address: "Fiera Milano Rho" }, { name: "EICMA 2025", details: "L'Esposizione Internazionale del Ciclo e Motociclo, un appuntamento imperdibile per gli appassionati di due ruote. Costo: Intero online €20.", dates: "6 - 9 Novembre 2025", address: "Fiera Milano Rho" }, { name: "Made Expo 2025", details: "Fiera dedicata al mondo dell'edilizia e dell'architettura. Costo: Standard €15.", dates: "19 - 22 Novembre 2025", address: "Fiera Milano Rho" }, { name: "Milan Games Week & Cartoomics", details: "L'evento perfetto per gli amanti dei videogiochi, dei fumetti e della cultura pop. Costo: da €23.", dates: "28 - 30 Novembre 2025", address: "Fiera Milano Rho" } ] },
+                        mostre: { title: "Mostre d'Autunno", infoLabel: "Dettagli", activities: [ { name: "Pietro Terzini - Are you in love? No I'm in Milano", details: "Mostra presso la Veneranda Biblioteca Ambrosiana.", dates: "Fino al 14 Ottobre 2025", address: "Veneranda Biblioteca Ambrosiana" }, { name: "Valerio Berruti - More than kids", details: "Mostra al MUDEC.", dates: "Fino al 2 Novembre 2025", address: "MUDEC (Museo delle Culture)" }, { name: "Rohini Devasher - Borrowed Light", details: "Mostra al MUDEC.", dates: "Fino al 2 Novembre 2025", address: "MUDEC (Museo delle Culture)" }, { name: "Giorgio Armani Privé 2005-2025", details: "Evento di celebrazione dell'alta moda.", dates: "26 Ottobre - 30 Novembre 2025", address: "Armani/Silos" }, { name: "Harry Potter: The Exhibition", details: "Mostra itinerante per gli appassionati del maghetto.", dates: "19 Settembre 2025 - 6 Gennaio 2026", address: "Spazio Ventura, Via Ventura 15" }, { name: "Leonora Carrington", details: "Mostra a Palazzo Reale.", dates: "20 Settembre 2025 - 11 Gennaio 2026", address: "Palazzo Reale" }, { name: "Appiani - Il Neoclassicismo a Milano", details: "Mostra a Palazzo Reale.", dates: "23 Settembre 2025 - 11 Gennaio 2026", address: "Palazzo Reale" }, { name: "Man Ray - Forme di luce", details: "Grande retrospettiva dedicata a uno dei più poliedrici geni del XX secolo.", dates: "24 Settembre 2025 - 11 Gennaio 2026", address: "Palazzo Reale" } ] },
+                        concerti: { title: "Concerti", infoLabel: "Dettagli", activities: [ { name: "Rocco Hunt", details: "Concerto a Milano.", dates: "6 Ottobre 2025", address: "Luogo da definire" }, { name: "Damiano David", details: "Concerto all'Unipol Forum di Assago.", dates: "7 Ottobre 2025", address: "Unipol Forum, Assago" }, { name: "OneRepublic", details: "Concerto all'Unipol Forum di Assago.", dates: "11 Ottobre 2025", address: "Unipol Forum, Assago" }, { name: "Simply Red", details: "Concerto all'Unipol Forum di Assago.", dates: "8 Novembre 2025", address: "Unipol Forum, Assago" }, { name: "Jamiroquai", details: "Concerto all'Unipol Forum di Assago.", dates: "13 Novembre 2025", address: "Unipol Forum, Assago" }, { name: "Mumford & Sons", details: "Concerto all'Unipol Forum.", dates: "21 Novembre 2025", address: "Unipol Forum, Assago" }, { name: "Anna", details: "Concerti al Fabrique.", dates: "22, 23, 24 Novembre 2025", address: "Fabrique, Milano" }, { name: "Antonello Venditti", details: "Concerto all'Unipol Forum di Assago.", dates: "25 Novembre 2025", address: "Unipol Forum, Assago" }, { name: "Big Time Rush", details: "Concerto all'Unipol Forum.", dates: "26 Novembre 2025", address: "Unipol Forum, Assago" }, { name: "Ludovico Einaudi", details: "Concerti al Teatro Dal Verme.", dates: "27 Nov - 14 Dic 2025", address: "Teatro Dal Verme, Milano" }, { name: "Annalisa", details: "Concerti all'Unipol Forum di Assago.", dates: "28, 29 Novembre 2025", address: "Unipol Forum, Assago" }, { name: "Francesco De Gregori", details: "Concerto all'Unipol Forum di Assago.", dates: "6 Dicembre 2025", address: "Unipol Forum, Assago" }, { name: "Baustelle", details: "Concerto all'Unipol Forum di Assago.", dates: "12 Dicembre 2025", address: "Unipol Forum, Assago" }, { name: "Giorgia", details: "Concerto all'Unipol Forum di Assago.", dates: "13 Dicembre 2025", address: "Unipol Forum, Assago" } ] },
+                        enogastronomici: { title: "Eventi Enogastronomici", infoLabel: "Dettagli", activities: [ { name: "Milano Wine Week 2025", details: "Settimana dedicata al vino.", dates: "4 - 12 Ottobre 2025", address: "Diverse sedi in città" }, { name: "La Vendemmia 2025", details: "Evento che combina il mondo del vino e del lusso.", dates: "6 - 12 Ottobre 2025", address: "Via Montenapoleone e vie limitrofe" }, { name: "Sagra di Baggio", details: "Sagra tradizionale.", dates: "17 - 19 Ottobre 2025", address: "Quartiere Baggio" }, { name: "Cook Fest 2025", details: "Festival culinario.", dates: "24 - 26 Ottobre 2025", address: "Museo Nazionale Scienza e Tecnologia" }, { name: "Milano Whisky Festival & Rum Show", details: "Evento per intenditori.", dates: "29 Novembre 2025", address: "BASE MILANO" } ] },
+                        altri: { title: "Altri Eventi", infoLabel: "Dettagli", activities: [ { name: "Giornate FAI d'Autunno", details: "Un'occasione per scoprire luoghi storici e artistici di Milano normalmente inaccessibili.", dates: "11 e 12 Ottobre 2025", address: "Vari luoghi a Milano" }, { name: "Prima della Scala", details: "L'inaugurazione della stagione operistica.", dates: "7 Dicembre 2025", address: "Teatro La Scala" } ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "Autumn Guide", subtitle: "Events and flavors of the season in Milan.", buttons: { fiere: "🎪 Fairs & Congresses", mostre: "🏛️ Exhibitions", concerti: "🎵 Concerts", enogastronomici: "🍷 Food & Wine Events", altri: "✨ Other Events" } },
+                    pages: {
+                        fiere: { title: "Fairs & Congresses", infoLabel: "Details", activities: [ { name: "Salone Franchising Milano", details: "A fair dedicated to the world of franchising, a great opportunity for those who want to start their own business.", dates: "October 2 - 4, 2025", address: "MiCo - Milano Congressi" }, { name: "HostMilano 2025", details: "An internationally relevant event for the restaurant, hospitality, and professional reception sectors.", dates: "October 17 - 21, 2025", address: "Fiera Milano Rho" }, { name: "EICMA 2025", details: "The International Motorcycle and Accessories Exhibition, a must-see for two-wheel enthusiasts. Cost: Full price online €20.", dates: "November 6 - 9, 2025", address: "Fiera Milano Rho" }, { name: "Made Expo 2025", details: "A fair dedicated to the world of construction and architecture. Cost: Standard €15.", dates: "November 19 - 22, 2025", address: "Fiera Milano Rho" }, { name: "Milan Games Week & Cartoomics", details: "The perfect event for lovers of video games, comics, and pop culture. Cost: from €23.", dates: "November 28 - 30, 2025", address: "Fiera Milano Rho" } ] },
+                        mostre: { title: "Autumn Exhibitions", infoLabel: "Details", activities: [ { name: "Pietro Terzini - Are you in love? No I'm in Milano", details: "Exhibition at the Veneranda Biblioteca Ambrosiana.", dates: "Until October 14, 2025", address: "Veneranda Biblioteca Ambrosiana" }, { name: "Valerio Berruti - More than kids", details: "Exhibition at MUDEC.", dates: "Until November 2, 2025", address: "MUDEC (Museum of Cultures)" }, { name: "Rohini Devasher - Borrowed Light", details: "Exhibition at MUDEC.", dates: "Until November 2, 2025", address: "MUDEC (Museum of Cultures)" }, { name: "Giorgio Armani Privé 2005-2025", details: "Haute couture celebration event.", dates: "October 26 - November 30, 2025", address: "Armani/Silos" }, { name: "Harry Potter: The Exhibition", details: "Traveling exhibition for fans of the little wizard.", dates: "September 19, 2025 - January 6, 2026", address: "Spazio Ventura, Via Ventura 15" }, { name: "Leonora Carrington", details: "Exhibition at Palazzo Reale.", dates: "September 20, 2025 - January 11, 2026", address: "Palazzo Reale" }, { name: "Appiani - Neoclassicism in Milan", details: "Exhibition at Palazzo Reale.", dates: "September 23, 2025 - January 11, 2026", address: "Palazzo Reale" }, { name: "Man Ray - Forms of light", details: "A major retrospective dedicated to one of the most multifaceted geniuses of the 20th century.", dates: "September 24, 2025 - January 11, 2026", address: "Palazzo Reale" } ] },
+                        concerti: { title: "Concerts", infoLabel: "Details", activities: [ { name: "Rocco Hunt", details: "Concert in Milan.", dates: "October 6, 2025", address: "TBA" }, { name: "Damiano David", details: "Concert at the Unipol Forum in Assago.", dates: "October 7, 2025", address: "Unipol Forum, Assago" }, { name: "OneRepublic", details: "Concert at the Unipol Forum in Assago.", dates: "October 11, 2025", address: "Unipol Forum, Assago" }, { name: "Simply Red", details: "Concert at the Unipol Forum in Assago.", dates: "November 8, 2025", address: "Unipol Forum, Assago" }, { name: "Jamiroquai", details: "Concert at the Unipol Forum in Assago.", dates: "November 13, 2025", address: "Unipol Forum, Assago" }, { name: "Mumford & Sons", details: "Concert at the Unipol Forum.", dates: "November 21, 2025", address: "Unipol Forum, Assago" }, { name: "Anna", details: "Concerts at Fabrique.", dates: "November 22, 23, 24, 2025", address: "Fabrique, Milan" }, { name: "Antonello Venditti", details: "Concert at the Unipol Forum in Assago.", dates: "November 25, 2025", address: "Unipol Forum, Assago" }, { name: "Big Time Rush", details: "Concert at the Unipol Forum.", dates: "November 26, 2025", address: "Unipol Forum, Assago" }, { name: "Ludovico Einaudi", details: "Concerts at the Teatro Dal Verme.", dates: "Nov 27 - Dec 14, 2025", address: "Teatro Dal Verme, Milan" }, { name: "Annalisa", details: "Concerts at the Unipol Forum in Assago.", dates: "November 28, 29, 2025", address: "Unipol Forum, Assago" }, { name: "Francesco De Gregori", details: "Concert at the Unipol Forum in Assago.", dates: "December 6, 2025", address: "Unipol Forum, Assago" }, { name: "Baustelle", details: "Concert at the Unipol Forum in Assago.", dates: "December 12, 2025", address: "Unipol Forum, Assago" }, { name: "Giorgia", details: "Concert at the Unipol Forum in Assago.", dates: "December 13, 2025", address: "Unipol Forum, Assago" } ] },
+                        enogastronomici: { title: "Food & Wine Events", infoLabel: "Details", activities: [ { name: "Milan Wine Week 2025", details: "A week dedicated to wine.", dates: "October 4 - 12, 2025", address: "Various locations in the city" }, { name: "La Vendemmia 2025", details: "An event that combines the world of wine and luxury.", dates: "October 6 - 12, 2025", address: "Via Montenapoleone and surrounding streets" }, { name: "Sagra di Baggio", details: "Traditional festival.", dates: "October 17 - 19, 2025", address: "Baggio district" }, { name: "Cook Fest 2025", details: "Culinary festival.", dates: "October 24 - 26, 2025", address: "National Museum of Science and Technology" }, { name: "Milan Whisky Festival & Rum Show", details: "An event for connoisseurs.", dates: "November 29, 2025", address: "BASE MILANO" } ] },
+                        altri: { title: "Other Events", infoLabel: "Details", activities: [ { name: "FAI Autumn Days", details: "An opportunity to discover historical and artistic places in Milan that are normally inaccessible.", dates: "October 11 and 12, 2025", address: "Various locations in Milan" }, { name: "La Scala Premiere", details: "The opening of the opera season.", dates: "December 7, 2025", address: "Teatro La Scala" } ] }
+                    }
+                },
+                fr: {}, de: {}, es: {}, pt: {}
+            },
+            arte: {
+                it: {
+                    homepage: { title: "Arte e Musei", subtitle: "Scopri il patrimonio culturale di Milano.", buttons: { masterpieces: "🏛️ Musei Capolavoro", casemuseo: "🏠 Case-Museo", fondazioni: "🌟 Fondazioni", gallerie: "🎨 Gallerie d'Arte" } },
+                    pages: {
+                        masterpieces: { title: "Musei Capolavoro", infoLabel: "Info", activities: [
+                            { name: "Pinacoteca di Brera", details: "Una delle più importanti collezioni d'arte in Italia. Gratuito: prima domenica del mese.", meta: { prezzo: "Variabile", address: "Via Brera, 28", tel: "+39 02 72105141", sitoWeb: "https://pinacotecabrera.org/" } },
+                            { name: "Museo del Novecento", details: "Dedicato all'arte del XX secolo, con vista su Piazza Duomo.", meta: { prezzo: "Intero €5", address: "Piazza Duomo, 8", tel: "+39 02 884 440 61", sitoWeb: "https://www.museodelnovecento.org/" } },
+                            { name: "Pinacoteca Ambrosiana", details: "Ospita la più vasta collezione di disegni di Leonardo da Vinci al mondo.", meta: { prezzo: "Variabile", address: "Piazza Pio XI, 2", tel: "+39 02 806921", sitoWeb: "https://ambrosiana.it/" } },
+                            { name: "Musei del Castello Sforzesco", details: "Un complesso di musei civici che include la Pietà Rondanini di Michelangelo.", meta: { prezzo: "Intero €5", address: "Piazza Castello", tel: "+39 02 88463700", sitoWeb: "https://www.milanocastello.it/" } },
+                            { name: "Museo Nazionale Scienza e Tecnologia", details: "Il più grande museo tecnico-scientifico d'Italia, dedicato a Leonardo da Vinci.", meta: { prezzo: "Intero ~€10", address: "Via San Vittore, 21", tel: "+39 02 485551", sitoWeb: "https://www.museoscienza.org/" } }
+                        ]},
+                        casemuseo: { title: "Case-Museo", infoLabel: "Info", activities: [
+                            { name: "Museo Poldi Pezzoli", details: "Una straordinaria collezione privata in una casa nobiliare del XIX secolo.", meta: { prezzo: "Variabile", address: "Via Alessandro Manzoni, 12", tel: "+39 02 79 4889", sitoWeb: "https://museopoldipezzoli.it/" } },
+                            { name: "Museo Bagatti Valsecchi", details: "Un'affascinante casa neorinascimentale che conserva arredi e collezioni d'arte originali.", meta: { prezzo: "Variabile", address: "Via Gesù, 5", tel: "+39 02 7600 6132", sitoWeb: "https://museobagattivalsecchi.org/" } },
+                            { name: "Villa Necchi Campiglio (FAI)", details: "Un'icona del razionalismo italiano degli anni '30, immersa in un giardino con piscina.", meta: { prezzo: "Verificare FAI", address: "Via Mozart, 14", tel: "+39 02 76340121", sitoWeb: "https://fondoambiente.it/luoghi/villa-necchi-campiglio" } },
+                            { name: "Casa Museo Boschi Di Stefano", details: "Una collezione di arte italiana del XX secolo nell'appartamento dove vissero i collezionisti.", meta: { prezzo: "Gratuito", address: "Via Giorgio Jan, 15", tel: "+39 02 88464748", sitoWeb: "https://www.casamuseoboschidistefano.it/" } },
+                            { name: "Casa degli Atellani – La Vigna di Leonardo", details: "La casa dove soggiornò Leonardo mentre dipingeva l'Ultima Cena, con la vigna originale.", meta: { prezzo: "Su prenotazione", address: "Corso Magenta, 65", sitoWeb: "https://www.vignadileonardo.com/" } }
+                        ]},
+                        fondazioni: { title: "Fondazioni d'Arte", infoLabel: "Info", activities: [
+                            { name: "Fondazione Prada", details: "Un punto di riferimento per l'arte contemporanea, con un'architettura spettacolare firmata da Rem Koolhaas.", meta: { prezzo: "Variabile", address: "Largo Isarco, 2", sitoWeb: "https://www.fondazioneprada.org/" } },
+                            { name: "Fondazione Nicola Trussardi", details: "Nota per le sue mostre nomadi che portano l'arte contemporanea in luoghi inaspettati della città.", meta: { prezzo: "Spesso gratuito", address: "Sedi variabili", sitoWeb: "https://www.fondazionenicolatrussardi.com/" } },
+                            { name: "Fondazione Giangiacomo Feltrinelli", details: "Un centro culturale dedicato alle scienze sociali, con un'iconica architettura a piramide di vetro.", meta: { prezzo: "Variabile", address: "Viale Pasubio, 5", tel: "+39 02 49583427", sitoWeb: "https://fondazionefeltrinelli.it/" } },
+                            { name: "Gallerie d’Italia", details: "Un polo museale che espone le collezioni d'arte di Intesa Sanpaolo, dall'Ottocento al contemporaneo.", meta: { prezzo: "Variabile", address: "Piazza della Scala, 6", sitoWeb: "https://gallerieditalia.com/it/milano/" } }
+                        ]},
+                        gallerie: { title: "Gallerie d'Arte Contemporanea", infoLabel: "Info", activities: [
+                            { name: "Massimo De Carlo", details: "Una delle gallerie più influenti sulla scena internazionale, con sedi a Milano, Londra e Hong Kong.", meta: { prezzo: "Ingresso libero", address: "Viale Lombardia 17", tel: "+39 02 70003987", sitoWeb: "https://massimodecarlo.com/" } },
+                            { name: "Galleria Raffaella Cortese", details: "Focalizzata su artiste donne internazionali, con tre spazi espositivi nella stessa via.", meta: { prezzo: "Ingresso libero", address: "Via Alessandro Stradella", tel: "+39 02 204 3555", sitoWeb: "https://raffaellacortese.com/" } },
+                            { name: "Cardi Gallery", details: "Specializzata in Arte Povera, Minimalismo e arte concettuale italiana del dopoguerra.", meta: { prezzo: "Ingresso libero", address: "Corso di Porta Nuova, 38", sitoWeb: "https://cardigallery.com/" } },
+                            { name: "Lia Rumma", details: "Una galleria storica che rappresenta alcuni dei più grandi nomi dell'arte contemporanea.", meta: { prezzo: "Ingresso libero", address: "Via Stilicone, 19", tel: "+39 02 29000101", sitoWeb: "https://liarumma.it/" } },
+                            { name: "Francesca Minini", details: "Nota per la sua ricerca su artisti emergenti e mid-career, sia italiani che internazionali.", meta: { prezzo: "Ingresso libero", address: "Via Massimiano, 25", sitoWeb: "https://www.francescaminini.it/" } }
+                        ]}
+                    }
+                },
+                en: {
+                    homepage: { title: "Art and Museums", subtitle: "Discover Milan's cultural heritage.", buttons: { masterpieces: "🏛️ Masterpiece Museums", casemuseo: "🏠 House Museums", fondazioni: "🌟 Art Foundations", gallerie: "🎨 Art Galleries" } },
+                    pages: {
+                        masterpieces: { title: "Masterpiece Museums", infoLabel: "Info", activities: [
+                            { name: "Pinacoteca di Brera", details: "One of Italy's most important art collections. Free: first Sunday of the month.", meta: { prezzo: "Variable", address: "Via Brera, 28", tel: "+39 02 72105141", sitoWeb: "https://pinacotecabrera.org/" } },
+                            { name: "Museo del Novecento", details: "Dedicated to 20th-century art, with views over Piazza Duomo.", meta: { prezzo: "Full €5", address: "Piazza Duomo, 8", tel: "+39 02 884 440 61", sitoWeb: "https://www.museodelnovecento.org/" } },
+                            { name: "Pinacoteca Ambrosiana", details: "Home to the world's largest collection of Leonardo da Vinci's drawings.", meta: { prezzo: "Variable", address: "Piazza Pio XI, 2", tel: "+39 02 806921", sitoWeb: "https://ambrosiana.it/" } },
+                            { name: "Sforza Castle Museums", details: "A complex of civic museums including Michelangelo's Pietà Rondanini.", meta: { prezzo: "Full €5", address: "Piazza Castello", tel: "+39 02 88463700", sitoWeb: "https://www.milanocastello.it/" } },
+                            { name: "National Museum of Science and Technology", details: "Italy's largest science and technology museum, dedicated to Leonardo da Vinci.", meta: { prezzo: "Full ~€10", address: "Via San Vittore, 21", tel: "+39 02 485551", sitoWeb: "https://www.museoscienza.org/" } }
+                        ]},
+                        casemuseo: { title: "House Museums", infoLabel: "Info", activities: [
+                            { name: "Poldi Pezzoli Museum", details: "An extraordinary private collection in a 19th-century nobleman's house.", meta: { prezzo: "Variable", address: "Via Alessandro Manzoni, 12", tel: "+39 02 79 4889", sitoWeb: "https://museopoldipezzoli.it/" } },
+                            { name: "Bagatti Valsecchi Museum", details: "A fascinating Neo-Renaissance house that preserves original furnishings and art collections.", meta: { prezzo: "Variable", address: "Via Gesù, 5", tel: "+39 02 7600 6132", sitoWeb: "https://museobagattivalsecchi.org/" } },
+                            { name: "Villa Necchi Campiglio (FAI)", details: "An icon of 1930s Italian Rationalism, set in a garden with a swimming pool.", meta: { prezzo: "Check FAI", address: "Via Mozart, 14", tel: "+39 02 76340121", sitoWeb: "https://fondoambiente.it/luoghi/villa-necchi-campiglio" } },
+                            { name: "Boschi Di Stefano House Museum", details: "A collection of 20th-century Italian art in the apartment where the collectors lived.", meta: { prezzo: "Free entry", address: "Via Giorgio Jan, 15", tel: "+39 02 88464748", sitoWeb: "https://www.casamuseoboschidistefano.it/" } },
+                            { name: "Casa degli Atellani – Leonardo's Vineyard", details: "The house where Leonardo stayed while painting The Last Supper, with the original vineyard.", meta: { prezzo: "By reservation", address: "Corso Magenta, 65", sitoWeb: "https://www.vignadileonardo.com/" } }
+                        ]},
+                        fondazioni: { title: "Art Foundations", infoLabel: "Info", activities: [
+                            { name: "Fondazione Prada", details: "A landmark for contemporary art, featuring spectacular architecture by Rem Koolhaas.", meta: { prezzo: "Variable", address: "Largo Isarco, 2", sitoWeb: "https://www.fondazioneprada.org/" } },
+                            { name: "Fondazione Nicola Trussardi", details: "Known for its nomadic exhibitions that bring contemporary art to unexpected places in the city.", meta: { prezzo: "Often free", address: "Various locations", sitoWeb: "https://www.fondazionenicolatrussardi.com/" } },
+                            { name: "Fondazione Giangiacomo Feltrinelli", details: "A cultural center dedicated to the social sciences, with an iconic glass pyramid architecture.", meta: { prezzo: "Variable", address: "Viale Pasubio, 5", tel: "+39 02 49583427", sitoWeb: "https://fondazionefeltrinelli.it/" } },
+                            { name: "Gallerie d’Italia", details: "A museum hub displaying Intesa Sanpaolo's art collections, from the 19th century to the contemporary.", meta: { prezzo: "Variable", address: "Piazza della Scala, 6", sitoWeb: "https://gallerieditalia.com/it/milano/" } }
+                        ]},
+                        gallerie: { title: "Contemporary Art Galleries", infoLabel: "Info", activities: [
+                            { name: "Massimo De Carlo", details: "One of the most influential galleries on the international scene, with locations in Milan, London, and Hong Kong.", meta: { prezzo: "Free entry", address: "Viale Lombardia 17", tel: "+39 02 70003987", sitoWeb: "https://massimodecarlo.com/" } },
+                            { name: "Galleria Raffaella Cortese", details: "Focused on international women artists, with three exhibition spaces on the same street.", meta: { prezzo: "Free entry", address: "Via Alessandro Stradella", tel: "+39 02 204 3555", sitoWeb: "https://raffaellacortese.com/" } },
+                            { name: "Cardi Gallery", details: "Specializing in Arte Povera, Minimalism, and post-war Italian conceptual art.", meta: { prezzo: "Free entry", address: "Corso di Porta Nuova, 38", sitoWeb: "https://cardigallery.com/" } },
+                            { name: "Lia Rumma", details: "A historic gallery representing some of the biggest names in contemporary art.", meta: { prezzo: "Free entry", address: "Via Stilicone, 19", tel: "+39 02 29000101", sitoWeb: "https://liarumma.it/" } },
+                            { name: "Francesca Minini", details: "Known for its research on emerging and mid-career artists, both Italian and international.", meta: { prezzo: "Free entry", address: "Via Massimiano, 25", sitoWeb: "https://www.francescaminini.it/" } }
+                        ]}
+                    }
+                },
+                fr: {}, de: {}, es: {}, pt: {}
+            },
+            nolo: {
+                it: {
+                    homepage: { title: "Mappa di NoLo", subtitle: "Guida ai luoghi iconici del quartiere.", buttons: { vedere: "Cosa vedere", mangiare: "Dove mangiare", shopping: "Shopping", arrivare: "Come arrivare" } },
+                    pages: {
+                        vedere: { title: "Cosa vedere e fare a NoLo", infoLabel: "Descrizione", activities: [ { name: "Street Art", details: "NoLo è un museo a cielo aperto. Lungo le sue strade, specialmente in Via Pontano, troverai numerosi graffiti e murales che raccontano la trasformazione del quartiere.", dates: "Via Pontano" }, { name: "Piazza Morbegno", details: "Considerata il cuore pulsante di NoLo, è un punto di ritrovo con locali e un'atmosfera da 'piccolo paese'.", dates: "Piazza Morbegno" } ] },
+                        mangiare: { title: "Dove mangiare e bere", infoLabel: "Informazioni", activities: [ { name: "Ghe Pensi Mi", details: "Un must per l'aperitivo a NoLo, con birre artigianali, eventi serali e un'atmosfera molto amichevole.", dates: "Piazza Morbegno, 2" }, { name: "Le Nove Scodelle", details: "Ristorante cinese apprezzato per la sua autenticità.", dates: "Viale Monza, 4" } ] },
+                        shopping: { title: "Shopping a NoLo", infoLabel: "Informazioni", activities: [ { name: "Le Pulci Pettinate", details: "Famoso mercatino vintage e handmade. Controlla le date degli eventi.", dates: "Via Cecilio Stazio" }, { name: "Magazzino 76", details: "Specializzato in modernariato e design d'interni, per pezzi unici.", dates: "Via Merano, 18" } ] },
+                        arrivare: { title: "Come arrivare a NoLo", infoLabel: "Informazioni", activities: [ { name: "Metro", details: "La linea M1 (rossa) con fermate a Rovereto e Pasteur ti porta direttamente nel cuore di NoLo.", dates: "M1 (Rossa)" }, { name: "Bus", details: "Diverse linee di autobus servono il quartiere, tra cui 62, 87, 90, 174, NM1, 56.", dates: "Varie linee" } ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "NoLo Map", subtitle: "A guide to the neighborhood's iconic spots.", buttons: { vedere: "What to See", mangiare: "Where to Eat", shopping: "Shopping", arrivare: "How to Get There" } },
+                    pages: {
+                        vedere: { title: "What to See and Do in NoLo", infoLabel: "Description", activities: [ { name: "Street Art", details: "NoLo is an open-air museum. Along its streets, especially on Via Pontano, you'll find numerous graffiti and murals.", dates: "Via Pontano" }, { name: "Piazza Morbegno", details: "Considered the beating heart of NoLo, it's a meeting point with local pubs and a 'small-town' atmosphere.", dates: "Piazza Morbegno" } ] },
+                        mangiare: { title: "Where to Eat and Drink", infoLabel: "Info", activities: [ { name: "Ghe Pensi Mi", details: "A must-visit for aperitivo in NoLo, with craft beers and a very friendly atmosphere.", dates: "Piazza Morbegno, 2" }, { name: "Le Nove Scodelle", details: "A highly-rated Chinese restaurant, praised for its authenticity.", dates: "Viale Monza, 4" } ] },
+                        shopping: { title: "Shopping in NoLo", infoLabel: "Info", activities: [ { name: "Le Pulci Pettinate", details: "Famous vintage and handmade market. Check the event dates.", dates: "Via Cecilio Stazio" }, { name: "Magazzino 76", details: "Specializing in modern antiques and interior design.", dates: "Via Merano, 18" } ] },
+                        arrivare: { title: "How to Get to NoLo", infoLabel: "Info", activities: [ { name: "Metro", details: "The M1 (red) line with stops at Rovereto and Pasteur takes you directly to the heart of NoLo.", dates: "M1 (Red)" }, { name: "Bus", details: "Several bus lines serve the neighborhood, including 62, 87, 90, 174, NM1, 56.", dates: "Various lines" } ] }
+                    }
+                },
+                fr: {}, de: {}, es: {}, pt: {}
+            },
+            argonne: {
+                it: {
+                    homepage: { title: "Mappa di Argonne", subtitle: "Guida al quartiere emergente di Milano.", buttons: { servizi_base: "Servizi e Numeri Utili", ristoranti: "Dove mangiare", drink: "Aperitivo e Serate", mobilita: "Trasporti" } },
+                    pages: {
+                        servizi_base: { title: "Servizi base per l'appartamento", infoLabel: "Dettagli", activities: [
+                            { name: "🏠 The Terrace – City View Apartment", details: "Servizi essenziali nelle vicinanze dell'appartamento.", listItems: [
+                                "Supermercato: Esselunga – Via Feltre 30 (~350 m)",
+                                "Posta: Poste Italiane – Via Giovanni Pacini 39 (~600 m, Lambrate)",
+                                "Banca: Intesa Sanpaolo – Via Giovanni Pacini 28 (~400 m)",
+                                "Polizia: Commissariato di P.S. Lambrate – Via Giovanni Pacini 46 (~450 m)",
+                                "Pronto Soccorso/Ospedale: Pronto Soccorso – Ospedale San Raffaele / sede Città Studi, Via Francesco Sforza 28 (~1,5 km)"
+                            ] }
+                        ] },
+                        ristoranti: { title: "Dove mangiare", infoLabel: "Cucina", activities: [
+                            { name: "Pizzeria Tondo", details: "Pizza napoletana gourmet e impasti altamente digeribili. Un must per gli amanti della pizza di qualità.", meta: { prezzo: "15-25€", address: "Viale Argonne, 38" } },
+                            { name: "La Birreria del Carrobbio", details: "Birreria con cucina, offre hamburger e piatti da pub. Atmosfera informale e ottima selezione di birre artigianali.", meta: { prezzo: "20-30€", address: "Viale Argonne, 15" } },
+                            { name: "Mizuumi Sushi", details: "Ristorante giapponese All You Can Eat, apprezzato per la qualità superiore alla media della formula.", meta: { prezzo: "25-35€", address: "Viale Argonne, 42" } }
+                        ] },
+                        drink: { title: "Aperitivo e Serate", infoLabel: "Atmosfera", activities: [
+                            { name: "Garage Italia", details: "Cocktail bar di Lapo Elkann. Design sofisticato a tema automobilistico e cocktail d'autore. Perfetto per un drink elegante dopo cena (vicino all'area).", meta: { address: "Viale Certosa, 86" } },
+                            { name: "Bar Basso", details: "Storico bar milanese, inventore del cocktail Negroni Sbagliato. Perfetto per un aperitivo tradizionale in un luogo iconico (vicino all'area).", meta: { address: "Via Plinio, 39" } },
+                            { name: "Sio Cafe (per ballare)", details: "Una delle discoteche più conosciute in zona. Offre serate a tema con musica commerciale e latina (vicino all'area).", meta: { address: "Via Privata Gardenia" } }
+                        ] },
+                        mobilita: { title: "Trasporti", infoLabel: "Dettagli", activities: [
+                            { name: "Metropolitana", details: "La linea M4 (blu) è la più vicina e serve direttamente il quartiere. Fermata 'Argonne'.", dates: "M4 (Blu) - Fermata Argonne" },
+                            { name: "Tram e Bus", details: "Bus 54 (Lambrate-Duomo), Bus 93 (Ospedale-Viale Campania). Tram 27 in Piazza Leonardo da Vinci (zona Città Studi).", dates: "Varie linee" }
+                        ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "Argonne Map", subtitle: "Guide to Milan's emerging neighborhood.", buttons: { servizi_base: "Essential Services", ristoranti: "Where to Eat", drink: "Aperitivo & Nightlife", mobilita: "Transport" } },
+                    pages: {
+                        servizi_base: { title: "Apartment Essential Services", infoLabel: "Details", activities: [
+                            { name: "🏠 The Terrace – City View Apartment", details: "Essential services near the apartment.", listItems: [
+                                "Supermarket: Esselunga – Via Feltre 30 (~350 m)",
+                                "Post Office: Poste Italiane – Via Giovanni Pacini 39 (~600 m, Lambrate)",
+                                "Bank: Intesa Sanpaolo – Via Giovanni Pacini 28 (~400 m)",
+                                "Police: Commissariato di P.S. Lambrate – Via Giovanni Pacini 46 (~450 m)",
+                                "Emergency Room/Hospital: Pronto Soccorso – Ospedale San Raffaele / Città Studi location, Via Francesco Sforza 28 (~1,5 km)"
+                            ] }
+                        ] },
+                        ristoranti: { title: "Where to Eat", infoLabel: "Cuisine", activities: [
+                            { name: "Pizzeria Tondo", details: "Gourmet Neapolitan pizza with highly digestible doughs. A must for quality pizza lovers.", meta: { prezzo: "15-25€", address: "Viale Argonne, 38" } },
+                            { name: "La Birreria del Carrobbio", details: "Brewery with kitchen, offering burgers and pub dishes. Informal atmosphere and excellent craft beer selection.", meta: { prezzo: "20-30€", address: "Viale Argonne, 15" } },
+                            { name: "Mizuumi Sushi", details: "All You Can Eat Japanese restaurant, noted for its above-average quality for the formula.", meta: { prezzo: "25-35€", address: "Viale Argonne, 42" } }
+                        ] },
+                        drink: { title: "Aperitivo & Nightlife", infoLabel: "Vibe", activities: [
+                            { name: "Garage Italia", details: "Lapo Elkann's cocktail bar. Sophisticated automotive-themed design and signature cocktails. Perfect for an elegant after-dinner drink (near the area).", meta: { address: "Viale Certosa, 86" } },
+                            { name: "Bar Basso", details: "Historic Milanese bar, inventor of the Negroni Sbagliato cocktail. Perfect for a traditional aperitivo in an iconic spot (near the area).", meta: { address: "Via Plinio, 39" } },
+                            { name: "Sio Cafe (for dancing)", details: "One of the best-known nightclubs in the area. Offers themed nights with commercial and Latin music (near the area).", meta: { address: "Via Privata Gardenia" } }
+                        ] },
+                        mobilita: { title: "Transport", infoLabel: "Details", activities: [
+                            { name: "Metro", details: "The M4 (blue) line is the closest and serves the neighborhood directly. Stop 'Argonne'.", dates: "M4 (Blue) - Argonne Stop" },
+                            { name: "Tram and Bus", details: "Bus 54 (Lambrate-Duomo), Bus 93 (Hospital-Viale Campania). Tram 27 in Piazza Leonardo da Vinci (Città Studi area).", dates: "Various lines" }
+                        ] }
+                    }
+                },
+                fr: {}, de: {}, es: {}, pt: {}
+            },
+            servizi: {
+                it: {
+                    homepage: { title: "Intorno a te", subtitle: "Servizi e numeri utili per il tuo soggiorno.", buttons: { apartments: "Servizi per Appartamento", general: "Numeri Utili Generali", consulates: "Consolati e Ambasciate" } },
+                    pages: {
+                        apartments: { title: "Servizi per Appartamento", infoLabel: "Dettagli", activities: [ { name: "The NoLo Heritage Studio", details: "Via Termopili 29, Milano", listItems: ["Pronto soccorso: Ospedale Maggiore Policlinico – Via San Barnaba 8 – Tel. 02 5503 6686", "Farmacia: Farmacia Pavesio – Via Giorgio Chavez 19 – Tel. 02 26820434", "Supermercato: Carrefour Market – Viale Monza 134 – Tel. 02 2828564"] }, { name: "The NoLo Suite Apartment", details: "Via Bassano del Grappa 32, Milano", listItems: ["Pronto soccorso: Ospedale Maggiore Policlinico – Via San Barnaba 8 – Tel. 02 5503 6686", "Farmacia: Farmacia Pavesio – Via Giorgio Chavez 19 – Tel. 02 26820434", "Supermercato: Carrefour Market – Viale Monza 134 – Tel. 02 2828564"] } ] },
+                        general: { title: "Numeri Utili Generali", infoLabel: "Dettagli", activities: [ { name: "Numero Unico Emergenze Europeo", details: "Numero unico per tutte le emergenze (Polizia, Vigili del Fuoco, Emergenza Sanitaria).", dates: "☎️ 112" }, { name: "Guardia Medica (Milano)", details: "Servizio di assistenza per problemi di salute non urgenti che si verificano di notte o nei giorni festivi.", dates: "☎️ 800 193 344" } ] },
+                        consulates: { title: "Consolati e Ambasciate", infoLabel: "Info", activities: [
+                            { name: "Francia – Consolato Generale", details: "Rappresentanza diplomatica francese.", meta: { address: "Via Cesare Mangili 1, Milano", tel: "+39 02 65 59 141", sitoWeb: "https://it.ambafrance.org/" } },
+                            { name: "Germania – Consolato Generale", details: "Rappresentanza diplomatica tedesca. Ricevimento solo su appuntamento.", meta: { address: "Via Solferino 40, Milano", tel: "+39 02 623110-10", sitoWeb: "https://italien.diplo.de/" } },
+                            { name: "Stati Uniti – U.S. Consulate General", details: "Rappresentanza diplomatica statunitense.", meta: { address: "Via Principe Amedeo 2/10, 20121 Milano", tel: "(+39) 02 290 351", sitoWeb: "https://it.usembassy.gov/" } },
+                            { name: "Svizzera – Consolato Generale", details: "Rappresentanza diplomatica svizzera.", meta: { address: "Via Palestro 2, Milano", tel: "+39 02 77 79 161", sitoWeb: "https://www.eda.admin.ch/milano" } },
+                            { name: "Spagna – Consolato Generale", details: "Rappresentanza diplomatica spagnola.", meta: { address: "Via Filippo Turati 29, Milano", tel: "+39 02 36 75 77 20", sitoWeb: "https://www.exteriores.gob.es/Consulados/milan/" } },
+                            { name: "Paesi Bassi – Consolato Generale", details: "Rappresentanza diplomatica olandese.", meta: { address: "Via Filippo Turati 27, Milano", tel: "Vedi sito", sitoWeb: "https://www.netherlandsworldwide.nl/countries/italy/about-us/consulate-general-in-milan" } },
+                            { name: "Regno Unito – British Consulate General", details: "Rappresentanza diplomatica britannica.", meta: { address: "Via San Paolo 7, Milano", tel: "+39 02 72 3001", sitoWeb: "https://www.gov.uk/world/organisations/british-consulate-general-milan" } },
+                            { name: "Cina – Consolato Generale", details: "Rappresentanza diplomatica cinese. Per visti, consultare il Centro Visti locale.", meta: { address: "Via Benaco 4, Milano", tel: "(+39) 02 5694 106", sitoWeb: "http://milano.china-consulate.org/ita/" } },
+                            { name: "Belgio – Consolato Onorario", details: "Rappresentanza diplomatica onoraria belga.", meta: { address: "Piazzale Cadorna / Future Leader Society", tel: "+39 02 3679 5580", sitoWeb: "https://italy.diplomatie.belgium.be/it/ambasciata-e-consolati/consolato-onorario-milano" } },
+                            { name: "Russia – Consolato Generale", details: "Rappresentanza diplomatica russa.", meta: { address: "Via Sant’Aquilino 3, Milano", tel: "+39 02 487 504 32", sitoWeb: "https://milan.mid.ru/" } }
+                        ]}
+                    }
+                },
+                en: {
+                    homepage: { title: "Around You", subtitle: "Useful services and numbers for your stay.", buttons: { apartments: "Apartment Services", general: "General Useful Numbers", consulates: "Consulates & Embassies" } },
+                    pages: {
+                        apartments: { title: "Apartment Services", infoLabel: "Details", activities: [ { name: "The NoLo Heritage Studio", details: "Via Termopili 29, Milan", listItems: ["Emergency Room: Ospedale Maggiore Policlinico – Via San Barnaba 8 – Tel. +39 02 5503 6686", "Pharmacy: Farmacia Pavesio – Via Giorgio Chavez 19 – Tel. +39 02 26820434", "Supermarket: Carrefour Market – Viale Monza 134 – Tel. +39 02 2828564"] }, { name: "The NoLo Suite Apartment", details: "Via Bassano del Grappa 32, Milan", listItems: ["Emergency Room: Ospedale Maggiore Policlinico – Via San Barnaba 8 – Tel. +39 02 5503 6686", "Pharmacy: Farmacia Pavesio – Via Giorgio Chavez 19 – Tel. +39 02 26820434", "Supermarket: Carrefour Market – Viale Monza 134 – Tel. +39 02 2828564"] } ] },
+                        general: { title: "General Useful Numbers", infoLabel: "Details", activities: [ { name: "European Emergency Number", details: "Single number for all emergencies (Police, Fire, Medical).", dates: "☎️ 112" }, { name: "Medical Guard (Milan)", details: "Assistance for non-urgent health issues at night or on holidays.", dates: "☎️ 800 193 344" } ] },
+                        consulates: { title: "Consulates & Embassies", infoLabel: "Info", activities: [
+                            { name: "France – Consulate General", details: "French diplomatic representation.", meta: { address: "Via Cesare Mangili 1, Milan", tel: "+39 02 65 59 141", sitoWeb: "https://it.ambafrance.org/" } },
+                            { name: "Germany – Consulate General", details: "German diplomatic representation. By appointment only.", meta: { address: "Via Solferino 40, Milan", tel: "+39 02 623110-10", sitoWeb: "https://italien.diplo.de/" } },
+                            { name: "United States – U.S. Consulate General", details: "U.S. diplomatic representation.", meta: { address: "Via Principe Amedeo 2/10, 20121 Milan", tel: "(+39) 02 290 351", sitoWeb: "https://it.usembassy.gov/" } },
+                            { name: "Switzerland – Consulate General", details: "Swiss diplomatic representation.", meta: { address: "Via Palestro 2, Milan", tel: "+39 02 77 79 161", sitoWeb: "https://www.eda.admin.ch/milano" } },
+                            { name: "Spain – Consulate General", details: "Spanish diplomatic representation.", meta: { address: "Via Filippo Turati 29, Milan", tel: "+39 02 36 75 77 20", sitoWeb: "https://www.exteriores.gob.es/Consulados/milan/" } },
+                            { name: "Netherlands – Consulate General", details: "Dutch diplomatic representation.", meta: { address: "Via Filippo Turati 27, Milan", tel: "See website", sitoWeb: "https://www.netherlandsworldwide.nl/countries/italy/about-us/consulate-general-in-milan" } },
+                            { name: "United Kingdom – British Consulate General", details: "British diplomatic representation.", meta: { address: "Via San Paolo 7, Milan", tel: "+39 02 72 3001", sitoWeb: "https://www.gov.uk/world/organisations/british-consulate-general-milan" } },
+                            { name: "China – Consulate General", details: "Chinese diplomatic representation. For visas, consult the local Visa Center.", meta: { address: "Via Benaco 4, Milan", tel: "(+39) 02 5694 106", sitoWeb: "http://milano.china-consulate.org/ita/" } },
+                            { name: "Belgium – Honorary Consulate", details: "Honorary Belgian diplomatic representation.", meta: { address: "Piazzale Cadorna / Future Leader Society", tel: "+39 02 3679 5580", sitoWeb: "https://italy.diplomatie.belgium.be/it/ambasciata-e-consolati/consolato-onorario-milano" } },
+                            { name: "Russia – Consulate General", details: "Russian diplomatic representation.", meta: { address: "Via Sant’Aquilino 3, Milan", tel: "+39 02 487 504 32", sitoWeb: "https://milan.mid.ru/" } }
+                        ]}
+                    }
+                },
+                fr: {}, de: {}, es: {}, pt: {}
+            },
+            sicurezza: {
+                it: {
+                    homepage: { title: "Guida alla Sicurezza", subtitle: "Consigli e checklist per un soggiorno tranquillo.", buttons: { checklist: "⚠️ Checklist Antifurto", borseggiatori: "🚶‍♂️ Attenzione ai Borseggiatori", truffe: "🤥 Truffe Comuni" } },
+                    pages: {
+                        checklist: { title: "Checklist Antifurto", infoLabel: "Consigli", activities: [
+                            { name: "✅ PRIMA DI PARTIRE (Prevenzione)", details: "", listItems: ["Backup del telefono: Salva contatti, foto e dati importanti online.", "Copie dei documenti: Salva una copia PDF/foto dei tuoi documenti nella tua email e porta una fotocopia cartacea separata.", "Chiavi di casa/auto: Lascia un mazzo di scorta a una persona di fiducia.", "Numeri di serie: Annota i numeri di serie dei tuoi dispositivi elettronici.", "Limita i contanti e usa la cassetta di sicurezza dell'hotel per extra e oggetti di valore.", "Non conservare mai il PIN insieme alle carte." ]},
+                            { name: "🆘 SUBITO DOPO IL FURTO (Azione Immediata)", details: "", listItems: ["Mantieni la calma.", "Blocca subito carte di credito/bancomat e la SIM del telefono.", "Fai subito denuncia alla Polizia o ai Carabinieri.", "Se ti hanno rubato i documenti, contatta il tuo Consolato o Ambasciata con la copia della denuncia.", "Avvisa la persona di fiducia per far cambiare la serratura di casa.", "Cambia le password importanti (email, social).", "Se sei senza soldi, chiedi aiuto all'hotel o contatta amici/parenti." ]}
+                        ]},
+                        borseggiatori: { title: "Attenzione ai Borseggiatori", infoLabel: "Consigli", activities: [ { name: "Zone più a Rischio", details: "I borseggiatori operano dove c'è folla e distrazione. Presta massima attenzione in:", listItems: ["Metropolitana (soprattutto linee M1 Rossa e M3 Gialla) e tram affollati.", "Piazza Duomo, Galleria Vittorio Emanuele, Castello Sforzesco.", "Stazione Centrale (aree biglietterie e binari).", "Vie dello shopping durante i weekend."] }, { name: "Consigli Generali di Prevenzione", details: "Poche semplici regole possono fare la differenza:", listItems: ["Tieni borse, zaini e marsupi sempre davanti al corpo e con le cerniere chiuse.", "Non tenere mai portafoglio, telefono o documenti nelle tasche posteriori.", "Non lasciare mai oggetti di valore incustoditi su tavoli di bar o ristoranti.", "Porta con te solo i contanti necessari per la giornata."] }, { name: "Sui Mezzi Pubblici", details: "I momenti di salita e discesa sono i più critici:", listItems: ["I borseggiatori spesso creano confusione o spingono per distrarti mentre le porte si chiudono.", "Diffida di chi ti urta 'accidentalmente' o cerca di distrarti facendo cadere qualcosa o chiedendoti informazioni in modo insistente."] } ] },
+                        truffe: { title: "Truffe Comuni a Milano", infoLabel: "Come riconoscerle ed evitarle", activities: [
+                            { name: "La Truffa del Braccialetto", details: "Una persona ti si avvicinerà offrendo un braccialetto come 'regalo' e cercherà di legartelo al polso per poi pretendere un pagamento.", meta: { address: "Piazza Duomo, Parco Sempione" }, listItems: ["Come evitarla: Rifiuta con un 'No, grazie' deciso e continua a camminare. Non permettere a nessuno di toccarti il polso."] },
+                            { name: "Firme per False Petizioni", details: "Giovani ti chiederanno di firmare una petizione per una causa benefica, per poi chiedere una donazione obbligatoria o distrarti per rubare.", meta: { address: "Stazione Centrale, Vie Commerciali" }, listItems: ["Come evitarla: Ignorali completamente e prosegui per la tua strada."] },
+                            { name: "Aiuto alle Biglietterie Automatiche", details: "Persone non autorizzate si offrono di aiutarti a comprare i biglietti alle macchinette per rubare il tuo resto o il PIN della carta.", meta: { address: "Stazione Centrale, Metro" }, listItems: ["Come evitarla: Rifiuta l'aiuto. Copri sempre la tastiera quando digiti il PIN e rivolgiti solo al personale ufficiale."] },
+                            { name: "Taxi Abusivi", details: "Persone ti avvicinano all'uscita di stazioni e aeroporti offrendo una corsa a tariffe gonfiate.", meta: { address: "Stazioni e aeroporti" }, listItems: ["Come evitarla: Utilizza solo i taxi ufficiali bianchi nelle aree di sosta designate. Assicurati che il tassametro sia attivato."] }
+                        ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "Safety Guide", subtitle: "Tips and checklists for a peaceful stay.", buttons: { checklist: "⚠️ Anti-Theft Checklist", borseggiatori: "🚶‍♂️ Beware of Pickpockets", truffe: "🤥 Common Scams" } },
+                    pages: {
+                        checklist: { title: "Anti-Theft Checklist", infoLabel: "Tips", activities: [
+                            { name: "✅ BEFORE YOU LEAVE (Prevention)", details: "", listItems: ["Phone Backup: Save contacts, photos, and important data online.", "Copies of Documents: Save a PDF/photo of your documents in your email and carry a separate paper photocopy.", "House/Car Keys: Leave a spare set with a trusted person.", "Serial Numbers: Note down the serial numbers of your valuable electronics.", "Limit cash and use the hotel safe for extra cash, spare credit cards, and valuables.", "Never keep your PIN together with your cards." ]},
+                            { name: "🆘 IMMEDIATELY AFTER A THEFT (Immediate Action)", details: "", listItems: ["Stay calm.", "Block credit/debit cards and your phone's SIM card immediately.", "Report the theft to the local police (Polizia or Carabinieri) right away.", "If your documents were stolen, contact your Consulate or Embassy with the police report copy.", "Notify your trusted person to change your house locks.", "Change important passwords (email, social media).", "If you're out of money, ask the hotel for help or contact friends/family." ]}
+                        ]},
+                        borseggiatori: { title: "Beware of Pickpockets", infoLabel: "Tips", activities: [ { name: "Risk Areas", details: "Pay close attention in crowded places like the Metro (M1, M3 lines), trams, Piazza Duomo, and Central Station. Always keep bags and backpacks in front of you and securely closed." } ] },
+                        truffe: { title: "Common Scams in Milan", infoLabel: "Description", activities: [ { name: "The Bracelet Scam", details: "Someone will approach you offering a bracelet as a 'gift' and then demand payment. Firmly refuse and walk away." }, { name: "Fake Petitions", details: "You are asked to sign for a charity and then they demand a donation or distract you to steal. Ignore them and keep walking." } ] }
+                    }
+                },
+                fr: {}, de: {}, es: {}, pt: {}
+            },
+            mobilita: {
+                it: {
+                    homepage: { title: "Mobilità a Milano", subtitle: "Guida per muoversi in città.", buttons: { trasporto_pubblico: "🚇 Trasporto Pubblico (ATM)", share_mobility: "🚲 Mobilità Condivisa" } },
+                    pages: {
+                        trasporto_pubblico: { title: "Trasporto Pubblico (ATM & STIBM)", infoLabel: "Dettagli", activities: [ { name: "Biglietti “base” (zone Mi1–Mi3)", details: "Biglietti validi per la città di Milano.", listItems: ["Biglietto singolo: €2,20 · valido 90’.", "Giornaliero 24h: €7,60.", "Carnet 10 viaggi: €19,50."] }, { name: "Pagare in modo “smart”", details: "Informazioni sul pagamento contactless.", listItems: ["Contactless (carta/telefono) funziona su metro, bus, tram ATM.", "Tap all’ingresso e tap all’uscita con lo stesso dispositivo."] }, { name: "Dall’aeroporto al centro", details: "Come raggiungere il centro dai principali aeroporti.", listItems: ["LIN (Linate) → M4 blu: ~12 minuti fino a San Babila.", "MXP (Malpensa) → Malpensa Express (Trenord): €15, ~40-60 minuti.", "BGY (Orio al Serio) → shuttle bus: diretto per Milano Centrale, ~55 minuti, da €8."] } ] },
+                        share_mobility: { title: "Share Mobility", infoLabel: "Dettagli", activities: [ { name: "Car Sharing", details: "Servizi: Enjoy, Share Now, Free2move, E-Vai, Zity. Vantaggi: Parcheggio gratuito su strisce blu/gialle e accesso all'Area C." }, { name: "Scooter Sharing", details: "Servizi: MiMoto, eCooltra, Go Sharing, Cityscoot. Ideale per tragitti brevi." }, { name: "Bike Sharing", details: "Services: BikeMi (stazioni fisse), RideMovi (free floating)." }, { name: "Monopattino Sharing", details: "Servizi: Bit, Helbiz, Dott, Lime, Tier. Limite di velocità e regole di parcheggio da rispettare." } ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "Milan Mobility", subtitle: "Your guide to getting around.", buttons: { trasporto_pubblico: "🚇 Public Transport (ATM)", share_mobility: "🚲 Shared Mobility" } },
+                    pages: {
+                        trasporto_pubblico: { title: "Public Transport (ATM & STIBM)", infoLabel: "Details", activities: [ { name: "Basic Tickets (Mi1–Mi3 zones)", details: "Tickets valid for the city of Milan.", listItems: ["Standard Ticket: €2.20 · valid 90’.", "24h Daily Ticket: €7.60.", "Carnet of 10 Tickets: €19.50."] }, { name: "Smart Payment Methods", details: "Information about contactless payment.", listItems: ["Contactless (card/phone) works on metro, bus, and tram.", "Tap in and tap out with the same device."] }, { name: "From the Airport to the Center", details: "How to reach the city center from the main airports.", listItems: ["LIN (Linate) → M4 blue line: ~12 minutes to San Babila.", "MXP (Malpensa) → Malpensa Express (Trenord): €15, ~40-60 minutes.", "BGY (Orio al Serio) → shuttle bus: direct to Milan Central Station, ~55 minutes, from €8."] } ] },
+                        share_mobility: { title: "Shared Mobility", infoLabel: "Details", activities: [ { name: "Car Sharing", details: "Services: Enjoy, Share Now, Free2move, E-Vai, Zity. Advantages: Free parking in blue/yellow spaces and access to Area C." }, { name: "Scooter Sharing", details: "Services: MiMoto, eCooltra, Go Sharing, Cityscoot. Ideal for short trips." }, { name: "Bike Sharing", details: "Services: BikeMi (station-based), RideMovi (free-floating)." }, { name: "E-Scooter Sharing", details: "Services: Bit, Helbiz, Dott, Lime, Tier. Speed limits and parking rules apply." } ] }
+                    }
+                },
+                fr: {}, de: {}, es: {}, pt: {}
+            }
+        };
+
+        // --- DATE PARSING & FILTERING ---
+
+        const monthMap = { it: { 'gennaio':0, 'febbraio':1, 'marzo':2, 'aprile':3, 'maggio':4, 'giugno':5, 'luglio':6, 'agosto':7, 'settembre':8, 'ottobre':9, 'novembre':10, 'dicembre':11 }, en: { 'january':0, 'february':1, 'march':2, 'april':3, 'may':4, 'june':5, 'jul':6, 'august':7, 'september':8, 'october':9, 'november':10, 'december':11 } };
+        monthMap.fr = monthMap.en; monthMap.de = monthMap.en; monthMap.es = monthMap.en; monthMap.pt = monthMap.en;
+
+        function parseDate(dateStr, lang = 'it') {
+            if (!dateStr || typeof dateStr !== 'string') return null;
+            const str = dateStr.toLowerCase().trim();
+            
+            let match = str.match(/(\d{1,2})\s+([a-zà-ú]+)\s+(\d{4})/);
+            if (match) {
+                const day = parseInt(match[1], 10);
+                const month = monthMap[lang][match[2]];
+                const year = parseInt(match[3], 10);
+                if (month !== undefined) return new Date(year, month, day);
+            }
+
+            match = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (match) {
+                return new Date(parseInt(match[3], 10), parseInt(match[2], 10) - 1, parseInt(match[1], 10));
+            }
+            return null;
+        }
+
+        function getEventDates(dateStr, lang = 'it') {
+            if (!dateStr || typeof dateStr !== 'string') return { start: null, end: null };
+            const str = dateStr.toLowerCase().trim();
+            let startDate = null, endDate = null;
+
+            let match = str.match(/(\d{1,2})\s*-\s*(\d{1,2})\s+([a-zà-ú]+)\s+(\d{4})/);
+            if(match) {
+                const month = monthMap[lang][match[3]];
+                if (month !== undefined) {
+                    startDate = new Date(parseInt(match[4], 10), month, parseInt(match[1], 10));
+                    endDate = new Date(parseInt(match[4], 10), month, parseInt(match[2], 10));
+                    return { start: startDate, end: endDate };
+                }
+            }
+            
+            match = str.match(/(\d{1,2})\s+([a-zà-ú]+)\s*-\s*(\d{1,2})\s+([a-zà-ú]+)\s+(\d{4})/);
+            if (match) {
+                const startMonth = monthMap[lang][match[2]];
+                const endMonth = monthMap[lang][match[4]];
+                if (startMonth !== undefined && endMonth !== undefined) {
+                    startDate = new Date(parseInt(match[5], 10), startMonth, parseInt(match[1], 10));
+                    endDate = new Date(parseInt(match[5], 10), endMonth, parseInt(match[3], 10));
+                    return { start: startDate, end: endDate };
+                }
+            }
+
+            match = str.match(/(fino al|until)\s+(.*)/);
+            if (match) {
+                endDate = parseDate(match[2], lang);
+                return { start: null, end: endDate };
+            }
+
+            match = str.match(/(dal|from)\s+(.*)/);
+            if (match) {
+                startDate = parseDate(match[2], lang);
+                return { start: startDate, end: null };
+            }
+            
+            startDate = parseDate(str, lang);
+            if (startDate) {
+                endDate = startDate;
+            }
+            
+            return { start: startDate, end: endDate };
+        }
+
+        function filterFutureEvents() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const filteredGuides = JSON.parse(JSON.stringify(allGuidesData)); // Copia profonda
+
+            for (const guideKey in filteredGuides) {
+                const guide = filteredGuides[guideKey];
+                for (const lang in guide) {
+                    if (!guide[lang].pages) continue;
+                    for (const pageKey in guide[lang].pages) {
+                        const page = guide[lang].pages[pageKey];
+                        if (Array.isArray(page.activities)) {
+                            // Filtra solo le guide che hanno un campo 'dates' (come 'autunno')
+                            if (guideKey === 'autunno') {
+                                page.activities = page.activities.filter(activity => {
+                                    const dateInfo = activity.dates || activity.meta?.prezzo;
+                                    if (!dateInfo || typeof dateInfo !== 'string' || !/\d/.test(dateInfo)) {
+                                        return true; // Mantieni le attività senza date chiare
+                                    }
+                                    const { start, end } = getEventDates(dateInfo, lang);
+                                    
+                                    // Se c'è una data di fine, verifica che non sia già passata
+                                    if (end) {
+                                        return end >= today;
+                                    }
+                                    // Se c'è solo una data di inizio, verifica che non sia passata
+                                    if (start) {
+                                        return start >= today;
+                                    }
+                                    return true;
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            allGuidesData = filteredGuides;
+        }
+
+
+        // --- CORE FUNCTIONS ---
+
+        function setActivePage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const element = document.getElementById(pageId);
+            if (element) element.classList.add('active');
+            window.scrollTo(0, 0); // Torna in cima alla nuova pagina
+        }
+
+        function showWelcomePage() {
+            currentGuide = null;
+            currentPage = null;
+            document.getElementById('search-input').value = '';
+            setActivePage('welcome');
+            updateWelcomeUI();
+        }
+
+        function loadGuide(guideId) {
+            currentGuide = guideId;
+            currentPage = null;
+            setActivePage('guide-content');
+            updateGuideUI();
+        }
+
+        function showPage(pageId) {
+            currentPage = pageId;
+            const guideContentEl = document.getElementById('guide-content');
+            // Logica di fallback: usa 'it' se la lingua corrente non ha i dati completi
+            const guideData = (allGuidesData[currentGuide]?.[currentLang]?.homepage) ? allGuidesData[currentGuide][currentLang] : allGuidesData[currentGuide]?.it;
+            const pageData = guideData?.pages?.[pageId];
+
+            if (!pageData) { loadGuide(currentGuide); return; }
+
+            const backButtonText = (LABELS[currentLang] || LABELS.it).goBack;
+
+            let mainContent;
+            if (pageData.itineraries) {
+                mainContent = pageData.itineraries.map(createItineraryCard).join('');
+            } else if (pageData.activities && pageData.activities.length > 0) {
+                mainContent = pageData.activities.map(activity => createActivityCard(activity, pageData.infoLabel)).join('');
+            } else {
+                mainContent = `<div class="p-4 text-center text-bianco opacity-80">${(LABELS[currentLang] || LABELS.it).noResults}</div>`;
+            }
+
+            guideContentEl.innerHTML = `
+                <header class="flex items-center mb-6 pb-4 border-b border-ottanio-light/20">
+                    <button onclick="loadGuide('${currentGuide}')" class="font-bold text-lg mr-4 text-verde-light">${backButtonText}</button>
+                    <h2 class="text-2xl font-bold text-bianco">${pageData.title}</h2>
+                </header>
+                <main>${mainContent}</main>
+            `;
+            window.scrollTo(0, 0);
+        }
+        
+        // --- UI RENDERING FUNCTIONS ---
+
+        function updateWelcomeUI() {
+            const textData = welcomeText[currentLang] || welcomeText.it;
+            document.getElementById('welcome-title').innerText = textData.title;
+            document.getElementById('welcome-subtitle').innerText = textData.subtitle;
+            document.getElementById('search-input').placeholder = textData.searchPlaceholder;
+            
+            const buttonsContainer = document.getElementById('welcome-buttons');
+            buttonsContainer.innerHTML = '';
+            
+            const buttonKeys = ['ristoranti', 'autunno', 'arte', 'museum4free', 'nolo', 'argonne', 'mobilita', 'servizi', 'sicurezza'];
+            buttonKeys.forEach(key => {
+                const button = document.createElement('button');
+                button.onclick = () => loadGuide(key);
+                // Il bottone "Museum4Free" non è una guida reale, ma un placeholder visivo
+                const isPlaceholder = key === 'museum4free';
+                
+                button.className = `w-full btn ${isPlaceholder ? 'bg-magenta-light text-ottanio opacity-70' : 'bg-verde-light text-ottanio'} py-4 rounded-lg text-lg font-bold border-2 border-magenta shadow-lg hover:shadow-xl ${isPlaceholder ? 'cursor-not-allowed' : ''}`;
+                button.innerText = textData[key];
+                
+                if (isPlaceholder) {
+                    button.onclick = () => alert('Funzionalità in arrivo! Riprova più tardi.');
+                }
+                
+                buttonsContainer.appendChild(button);
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                const isActive = btn.dataset.lang === currentLang;
+                btn.classList.toggle('active', isActive);
+                btn.classList.toggle('opacity-60', !isActive);
+            });
+        }
+
+        function updateGuideUI() {
+            if (!currentGuide) return;
+            const guideData = (allGuidesData[currentGuide]?.[currentLang]?.homepage) ? allGuidesData[currentGuide][currentLang] : allGuidesData[currentGuide]?.it;
+            const pageElement = document.getElementById('guide-content');
+            const backButtonText = (LABELS[currentLang] || LABELS.it).backToGuides;
+
+            if (!guideData || !guideData.homepage) {
+                pageElement.innerHTML = `
+                    <header class="flex items-center mb-6 pb-4 border-b border-ottanio-light/20">
+                        <button onclick="showWelcomePage()" class="font-bold text-lg mr-4 text-verde-light">${backButtonText}</button>
+                        <h2 class="text-2xl font-bold text-bianco">Contenuto non disponibile</h2>
+                    </header>`;
+                return;
+            }
+
+            let buttonsHtml = '';
+            for (const key in guideData.homepage.buttons) {
+                buttonsHtml += `<button onclick="showPage('${key}')" class="w-full btn bg-verde-light text-ottanio py-4 rounded-lg text-lg font-bold border-2 border-magenta shadow-lg hover:shadow-xl">${guideData.homepage.buttons[key]}</button>`;
+            }
+
+            // Pulsante per l'Art Tour AI
+            if (currentGuide === 'arte') {
+                const labels = LABELS[currentLang] || LABELS.it;
+                buttonsHtml += `<button onclick="openArtTourModal()" class="w-full btn bg-magenta-light text-ottanio py-4 rounded-lg text-lg font-bold border-2 border-magenta shadow-lg hover:shadow-xl">${labels.createArtTourButton}</button>`;
+            }
+
+            pageElement.innerHTML = `
+                <header class="flex items-center mb-6 pb-4 border-b border-ottanio-light/20">
+                    <button onclick="showWelcomePage()" class="font-bold text-lg mr-4 text-verde-light">${backButtonText}</button>
+                    <h2 class="text-2xl font-bold text-bianco">${guideData.homepage.title}</h2>
+                </header>
+                <main class="space-y-4">${buttonsHtml}</main>
+            `;
+        }
+
+        function createActivityCard(activity, infoLabel) {
+            const labels = LABELS[currentLang] || LABELS.it;
+            let detailsHtml;
+            const meta = activity.meta || {};
+
+            let extraInfoHtml = '';
+            if (meta.address) {
+                extraInfoHtml += `<p class="mt-2 text-ottanio-light opacity-80"><strong class="font-semibold text-ottanio-light">${labels.address}:</strong> ${meta.address}</p>`;
+            }
+            if(meta.orari){
+                extraInfoHtml += `<p class="mt-1 text-ottanio-light opacity-80"><strong class="font-semibold text-ottanio-light">${labels.orari}:</strong> ${meta.orari}</p>`;
+            }
+            if (meta.tel) {
+                extraInfoHtml += `<p class="mt-1 text-ottanio-light opacity-80"><strong class="font-semibold text-ottanio-light">${labels.tel}:</strong> <a href="tel:${meta.tel.replace(/\s/g, '')}" class="underline hover:text-verde">${meta.tel}</a></p>`;
+            }
+            if (meta.sitoWeb) {
+                extraInfoHtml += `<p class="mt-1 text-ottanio-light opacity-80"><strong class="font-semibold text-ottanio-light">${labels.sitoWeb}:</strong> <a href="${meta.sitoWeb}" target="_blank" rel="noopener" class="underline hover:text-verde">${labels.visitWebsite}</a></p>`;
+            }
+
+            if (activity.listItems) {
+                detailsHtml = `
+                    <div class="font-bold text-bianco mb-2">${activity.name}</div>
+                    <ul class="list-disc space-y-1 text-sm text-ottanio-light">
+                        ${activity.listItems.map(item => `<li>${item}</li>`).join('')}
+                    </ul>`;
+            } else {
+                detailsHtml = `<p class="text-sm font-semibold text-ottanio-light">${infoLabel}:</p><p class="mt-1 text-ottanio-light opacity-90">${activity.details}</p>${extraInfoHtml}`;
+            }
+
+            const aiButtonHtml = currentGuide === 'ristoranti' 
+                ? `<button onclick="openAiModal('${activity.name}', '${activity.details.replace(/'/g, "\\'")}', '${meta.address || ''}')" class="btn bg-verde-light text-ottanio px-3 py-1 rounded-full text-sm mt-4 font-bold">✨ Chiedi all'IA</button>`
+                : '';
+            
+            const consulateAiButtonHtml = (currentGuide === 'servizi' && currentPage === 'consulates')
+                ? `<button onclick="openConsulateAiModal('${activity.name}')" class="btn bg-verde-light text-ottanio px-3 py-1 rounded-full text-sm mt-4 font-bold">✨ Assistente AI</button>`
+                : '';
+
+            const dateOrPrice = activity.dates || meta.prezzo;
+
+            return `
+                <div class="bg-white/10 p-4 rounded-lg mb-4 shadow-lg">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
+                        <h3 class="font-bold text-xl text-bianco mb-2 sm:mb-0 break-words">${activity.name}</h3>
+                        ${dateOrPrice ? `<span class="text-sm font-bold px-2 py-1 rounded-full bg-verde text-bianco self-start sm:self-center whitespace-nowrap">${dateOrPrice}</span>` : ''}
+                    </div>
+                    <div class="mt-3 break-words">${detailsHtml}</div>
+                    ${aiButtonHtml}
+                    ${consulateAiButtonHtml}
+                </div>`;
+        }
+        
+        function createItineraryCard(itinerary) {
+            return `
+                <div class="bg-white/10 p-4 rounded-lg mb-4 shadow-lg">
+                    <h3 class="font-bold text-xl text-bianco">${itinerary.title}</h3>
+                    <p class="mt-2 text-ottanio-light opacity-90">${itinerary.description}</p>
+                </div>`;
+        }
+
+        // --- SEARCH FUNCTIONS ---
+        
+        function handleSearch(query) {
+            const results = [];
+            const lowerCaseQuery = query.toLowerCase();
+
+            for (const guideId in allGuidesData) {
+                const guide = (allGuidesData[guideId]?.[currentLang]?.homepage) ? allGuidesData[guideId][currentLang] : allGuidesData[guideId]?.it;
+                if (!guide?.pages) continue;
+
+                for (const pageId in guide.pages) {
+                    const page = guide.pages[pageId];
+                    const matchInPageTitle = page.title && page.title.toLowerCase().includes(lowerCaseQuery);
+
+                    if (matchInPageTitle) {
+                        results.push({ type: 'page', guideId, pageId, name: page.title, details: `${(LABELS[currentLang] || LABELS.it).guideContext}: ${guide.homepage.title}` });
+                    }
+                    
+                    if (page.activities) {
+                        page.activities.forEach(activity => {
+                            const activityText = `${activity.name} ${activity.details} ${activity.meta?.address || ''}`.toLowerCase();
+                            if (activityText.includes(lowerCaseQuery) && !results.some(r => r.name === activity.name)) {
+                                results.push({
+                                    type: 'activity', guideId, pageId, name: activity.name, details: activity.details,
+                                    meta: activity.meta,
+                                    context: `${(LABELS[currentLang] || LABELS.it).guideContext}: ${guide.homepage.title} > ${page.title}`
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+            displaySearchResults(results, query);
+        }
+
+        function displaySearchResults(results, query) {
+            setActivePage('search-results');
+            const searchResultsElement = document.getElementById('search-results');
+            const labels = LABELS[currentLang] || LABELS.it;
+
+            let resultsHtml = `
+                <header class="flex items-center mb-6 pb-4 border-b border-ottanio-light/20">
+                    <button onclick="showWelcomePage()" class="font-bold text-lg mr-4 text-verde-light">${labels.backToGuides}</button>
+                    <h2 class="text-2xl font-bold text-bianco">${labels.resultsFor} "${query}"</h2>
+                </header>
+                <main class="space-y-4">`;
+
+            if (results.length > 0) {
+                resultsHtml += results.map(result => {
+                    return `
+                        <div class="bg-white/10 p-4 rounded-lg shadow-sm cursor-pointer" onclick="loadGuideAndShowPage('${result.guideId}', '${result.pageId}')">
+                            <h3 class="font-bold text-xl text-bianco">${result.name}</h3>
+                            <p class="mt-1 text-sm text-ottanio-light opacity-80">${result.context || result.details}</p>
+                        </div>`;
+                }).join('');
+            } else {
+                resultsHtml += `<p class="text-center text-ottanio-light">${labels.noResults} "${query}".</p>`;
+            }
+
+            resultsHtml += `</main>`;
+            searchResultsElement.innerHTML = resultsHtml;
+        }
+
+        function loadGuideAndShowPage(guideId, pageId) {
+            currentGuide = guideId;
+            showPage(pageId);
+        }
+        
+        // --- GEMINI API & AI MODAL FUNCTIONS ---
+
+        function openAiModal(name, details, address) {
+            const modal = document.getElementById('ai-modal');
+            const modalBody = document.getElementById('ai-modal-body');
+            const labels = LABELS[currentLang] || LABELS.it;
+
+            const atmospherePrompt = `Sei una guida locale esperta di Milano. Descrivi in 2-3 frasi l'atmosfera e l'occasione ideale per una serata al ristorante '${name}', conosciuto per: '${details}'. Rispondi in ${currentLang} in modo amichevole e conciso.`;
+            const eveningPrompt = `Sei un concierge di un hotel di lusso a Milano. Crea un breve piano per una serata che include una cena al ristorante '${name}'. Suggerisci un posto per un aperitivo prima e un'attività tranquilla dopo cena nelle vicinanze. Rispondi in ${currentLang}.`;
+            const itineraryPrompt = `Sei una guida turistica di Milano. Un utente si trova al ristorante '${name}' all'indirizzo '${address}'. Crea un breve itinerario a piedi di 1-2 ore per esplorare le attrazioni o i luoghi di interesse più vicini. Se non conosci l'indirizzo, suggerisci un'area generica basandoti sul tipo di locale. Rispondi in ${currentLang}.`;
+
+            modalBody.innerHTML = `
+                <h2 class="text-2xl font-bold text-center mb-4 text-ottanio">${labels.ai_modal_title}</h2>
+                <p class="text-center text-ottanio mb-1 font-semibold">${name}</p>
+                <div class="space-y-3 mt-4">
+                    <button onclick="callGemini('${atmospherePrompt.replace(/"/g, "'")}')" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${labels.ai_prompt_1}</button>
+                    <button onclick="callGemini('${eveningPrompt.replace(/"/g, "'")}')" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${labels.ai_prompt_2}</button>
+                    <button onclick="callGemini('${itineraryPrompt.replace(/"/g, "'")}')" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${labels.ai_prompt_3}</button>
+                </div>
+                <div id="ai-response-area" class="mt-4"></div>
+            `;
+            modal.classList.add('active');
+        }
+        
+        function openConsulateAiModal(consulateName) {
+            const modal = document.getElementById('ai-modal');
+            const modalBody = document.getElementById('ai-modal-body');
+            const labels = LABELS[currentLang] || LABELS.it;
+
+            const docPrompt = `Sei un assistente consolare. Un turista ha subito il furto del passaporto e deve rivolgersi al '${consulateName}'. Elenca in modo chiaro e schematico i documenti e i passaggi generali necessari per richiedere un documento di viaggio di emergenza. Rispondi in ${currentLang}.`;
+            const registrationPrompt = `Sei un assistente consolare. Spiega in modo semplice come un turista può registrare il proprio viaggio presso il '${consulateName}', menzionando i benefici per la sicurezza. Rispondi in ${currentLang}.`;
+            const emailPrompt = `Sei un assistente consolare. Scrivi una bozza di email formale ma semplice in italiano per un turista che deve richiedere un appuntamento urgente al '${consulateName}' a causa del furto dei suoi documenti. Lascia degli spazi [segnaposto] per i dati personali.`;
+
+            modalBody.innerHTML = `
+                <h2 class="text-2xl font-bold text-center mb-4 text-ottanio">${labels.ai_consulate_title}</h2>
+                <p class="text-center text-ottanio mb-1 font-semibold">${consulateName}</p>
+                <div class="space-y-3 mt-4">
+                    <button onclick="callGemini('${docPrompt.replace(/"/g, "'")}')" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${labels.ai_consulate_prompt_1}</button>
+                    <button onclick="callGemini('${registrationPrompt.replace(/"/g, "'")}')" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${labels.ai_consulate_prompt_2}</button>
+                    <button onclick="callGemini('${emailPrompt.replace(/"/g, "'")}')" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${labels.ai_consulate_prompt_3}</button>
+                </div>
+                <div id="ai-response-area" class="mt-4"></div>
+            `;
+            modal.classList.add('active');
+        }
+
+        function openArtTourModal() {
+            const modal = document.getElementById('ai-modal');
+            const modalBody = document.getElementById('ai-modal-body');
+            const labels = LABELS[currentLang] || LABELS.it;
+            const artGuide = allGuidesData.arte[currentLang] || allGuidesData.arte.it;
+
+            let checkboxesHtml = '<form id="art-tour-form" class="max-h-[50vh] overflow-y-auto pr-2">';
+            for (const pageKey in artGuide.pages) {
+                const page = artGuide.pages[pageKey];
+                checkboxesHtml += `<h4 class="font-bold text-lg text-ottanio mt-4 mb-2">${page.title}</h4>`;
+                page.activities.forEach(activity => {
+                    const activityId = `art_${activity.name.replace(/\s/g, '_').replace(/[^a-zA-Z0-9_]/g, '')}`;
+                    const address = activity.meta?.address || '';
+                    checkboxesHtml += `
+                        <div class="flex items-center my-2">
+                            <input type="checkbox" id="${activityId}" name="art_location" value="${activity.name}" data-address="${address}" class="h-4 w-4 rounded border-gray-300 text-verde focus:ring-verde">
+                            <label for="${activityId}" class="ml-3 block text-sm font-medium text-gray-700">${activity.name}</label>
+                        </div>`;
+                });
+            }
+            checkboxesHtml += '</form>';
+
+
+            modalBody.innerHTML = `
+                <h2 class="text-2xl font-bold text-center mb-2 text-ottanio">${labels.artTourModalTitle}</h2>
+                <p class="text-center text-gray-600 mb-4">${labels.artTourModalSubtitle}</p>
+                ${checkboxesHtml}
+                <button type="button" onclick="generateArtTour()" class="w-full btn bg-verde text-bianco p-3 rounded-lg font-bold mt-6">${labels.generateTourButton}</button>
+                <div id="ai-response-area" class="mt-4"></div>
+            `;
+            modal.classList.add('active');
+        }
+
+        function generateArtTour() {
+            const form = document.getElementById('art-tour-form');
+            const selectedCheckboxes = Array.from(form.querySelectorAll('input[name="art_location"]:checked'));
+            const labels = LABELS[currentLang] || LABELS.it;
+
+            const responseArea = document.getElementById('ai-response-area');
+            if (selectedCheckboxes.length < 2) {
+                responseArea.innerHTML = `<div class="ai-response text-magenta">${labels.artTourError}</div>`;
+                return;
+            }
+
+            const locationsList = selectedCheckboxes.map(cb => {
+                return `${cb.value} (indirizzo: ${cb.dataset.address})`;
+            }).join('; ');
+
+            const prompt = `${labels.artTourPrompt_part1} ${locationsList}. ${labels.artTourPrompt_part2.replace('italiano', currentLang)}`;
+            
+            callGemini(prompt, 3, 1000, responseArea);
+        }
+
+        function closeAiModal() {
+            document.getElementById('ai-modal').classList.remove('active');
+        }
+
+        async function callGemini(prompt, retries = 3, delay = 1000, responseEl) {
+            const responseArea = responseEl || document.getElementById('ai-response-area');
+            responseArea.innerHTML = '<div class="loader"></div>';
+
+            const apiKey = GEMINI_API_KEY;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: {
+                    parts: [{ text: "Act as a friendly and knowledgeable Milan local guide. Your answers should be helpful, concise, and engaging." }]
+                }
+            };
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    responseArea.innerHTML = `<div class="ai-response">${text}</div>`;
+                } else {
+                    throw new Error("No content received from API.");
+                }
+
+            } catch (error) {
+                if (retries > 0) {
+                    await new Promise(res => setTimeout(res, delay));
+                    return callGemini(prompt, retries - 1, delay * 2, responseArea);
+                } else {
+                    console.error("Error calling Gemini API:", error);
+                    const errorText = currentLang === 'it' ? "Spiacenti, si è verificato un errore nel ricevere la risposta. Riprova più tardi." : "Sorry, there was an error getting a response. Please try again later.";
+                    responseArea.innerHTML = `<div class="ai-response text-magenta">${errorText}</div>`;
+                }
+            }
+        }
+        
+        // --- EVENT LISTENERS & INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            filterFutureEvents(); 
+            updateWelcomeUI();
+
+            document.getElementById('lang-switcher').addEventListener('click', (event) => {
+                const target = event.target.closest('.lang-btn');
+                if (target) {
+                    currentLang = target.dataset.lang;
+                    updateWelcomeUI(); 
+                    // Ricarica la pagina corrente o torna alla welcome page se necessario
+                    if (document.getElementById('search-results').classList.contains('active')) {
+                        showWelcomePage();
+                    } else if (currentPage && currentGuide) {
+                        showPage(currentPage);
+                    } else if (currentGuide) {
+                        loadGuide(currentGuide);
+                    }
+                }
+            });
+
+
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter' && searchInput.value.trim() !== '') {
+                    handleSearch(searchInput.value.trim());
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>        @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
