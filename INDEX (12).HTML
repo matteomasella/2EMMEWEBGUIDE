@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Scegli la tua Guida - 2EMME Real Estate</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'ottanio': '#004D54',
+              'ottanio-light': '#BFEBFF',
+              'magenta': '#DB4F61',
+              'magenta-light': '#F5C9D1',
+              'verde': '#54C4A6',
+              'verde-light': '#CCEDE5',
+              'bianco': '#FFFFFF',
+              'nero': '#000000',
+              'grigio-chiaro': '#f9fafb'
+            }
+          }
+        }
+      }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #004D54; margin: 0; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 12px rgba(0,0,0,0.2); }
+        .lang-btn.active { background-color: #54C4A6; color: #FFFFFF; font-weight: 700; }
+        .list-disc { list-style-type: none; padding-left: 0; }
+        .list-disc li { position: relative; padding-left: 1.5em; margin-bottom: 0.5rem; }
+        .list-disc li::before { content: '•'; position: absolute; left: 0.5em; color: #54C4A6; font-weight: bold; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 560px;
+            color: #004D54;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            color: #666;
+            cursor: pointer;
+        }
+        .ai-response {
+            background-color: #f9fafb;
+            border-left: 4px solid #54C4A6;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .loader {
+            border: 4px solid #CCEDE5;
+            border-top: 4px solid #54C4A6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* small responsive tweak */
+        @media (min-width: 640px) {
+            .max-w-md { max-width: 640px; }
+        }
+    </style>
+</head>
+<body class="bg-ottanio">
+
+    <div id="app-container" class="max-w-md mx-auto min-h-screen bg-ottanio p-4">
+
+        <div id="welcome" class="page active p-6 bg-ottanio">
+            <div class="flex justify-end mb-4" id="lang-switcher" role="tablist" aria-label="Seleziona lingua">
+                <button class="lang-btn active px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm" data-lang="it" aria-pressed="true">IT</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="en" aria-pressed="false">EN</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="fr" aria-pressed="false">FR</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="de" aria-pressed="false">DE</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="es" aria-pressed="false">ES</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="pt" aria-pressed="false">PT</button>
+            </div>
+
+            <header class="text-center mb-6">
+                <div class="flex justify-center items-center gap-4 mb-2">
+                    <img src="https://i.ibb.co/6g2xYfW/logosfottanio.png" class="w-24 h-24 mb-4" alt="Logo 2EMME">
+                </div>
+                <h1 class="text-3xl font-bold text-bianco" id="welcome-title"></h1>
+                <p class="text-ottanio-light opacity-80" id="welcome-subtitle"></p>
+            </header>
+
+            <div class="mb-6">
+                <input type="text" id="search-input" class="w-full p-3 rounded-lg border-2 bg-white/10 border-ottanio-light/20 focus:outline-none focus:border-verde text-bianco placeholder-ottanio-light" placeholder="">
+            </div>
+
+            <main class="space-y-4" id="welcome-buttons"></main>
+        </div>
+
+        <div id="guide-content" class="page p-6 bg-ottanio"></div>
+        <div id="search-results" class="page p-6 bg-ottanio"></div>
+
+    </div>
+
+    <div id="ai-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <button onclick="closeAiModal()" class="modal-close-btn" aria-label="Chiudi">&times;</button>
+            <div id="ai-modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE & CONSTANTS ---
+        let currentGuide = null;
+        let currentPage = null;
+        let currentLang = 'it';
+
+        // --- UI & TRANSLATION DATA (ridotto per chiarezza, estendibile) ---
+        const welcomeText = {
+            it: { title: "Guida a Milano", subtitle: "Scegli l'esperienza perfetta per te", searchPlaceholder: "Cerca luoghi, eventi, musei...", ristoranti: "🍽️ Guida Ristoranti", autunno: "🍂 Guida Autunno", arte: "🎨 Arte e Musei", museum4free: "🏛️ Musei Gratis", nolo: "NoLo", argonne: "Argonne", mobilita: "Mobilità", servizi: "Servizi", sicurezza: "Sicurezza" },
+            en: { title: "Milan Guide", subtitle: "Choose your perfect experience", searchPlaceholder: "Search places, events, museums...", ristoranti: "🍽️ Restaurant Guide", autunno: "🍂 Autumn Guide", arte: "🎨 Art and Museums", museum4free: "🏛️ Free Museums", nolo: "NoLo", argonne: "Argonne", mobilita: "Mobility", servizi: "Services", sicurezza: "Safety" },
+            fr: { title: "Guide de Milan", subtitle: "Choisissez votre expérience", searchPlaceholder: "Rechercher lieux, événements, musées...", ristoranti: "Restaurants", autunno: "Automne", arte: "Art et Musées", museum4free: "Musées Gratuits", nolo: "NoLo", argonne: "Argonne", mobilita: "Mobilité", servizi: "Services", sicurezza: "Sécurité" },
+            de: { title: "Mailand Führer", subtitle: "Wählen Sie Ihr Erlebnis", searchPlaceholder: "Suche Orte, Events, Museen...", ristoranti: "Restaurants", autunno: "Herbst", arte: "Kunst & Museen", museum4free: "Kostenlose Museen", nolo: "NoLo", argonne: "Argonne", mobilita: "Mobilität", servizi: "Dienstleistungen", sicurezza: "Sicherheit" },
+            es: { title: "Guía de Milán", subtitle: "Elija su experiencia", searchPlaceholder: "Buscar lugares, eventos, museos...", ristoranti: "Restaurantes", autunno: "Otoño", arte: "Arte y Museos", museum4free: "Museos Gratis", nolo: "NoLo", argonne: "Argonne", mobilita: "Movilidad", servizi: "Servicios", sicurezza: "Seguridad" },
+            pt: { title: "Guia de Milão", subtitle: "Escolha sua experiência", searchPlaceholder: "Procurar lugares, eventos, museus...", ristoranti: "Restaurantes", autunno: "Outono", arte: "Arte e Museus", museum4free: "Museus Grátis", nolo: "NoLo", argonne: "Argonne", mobilita: "Mobilidade", servizi: "Serviços", sicurezza: "Segurança" }
+        };
+
+        const LABELS = {
+             it: { backToGuides: "← Torna alle guide", goBack: "← Torna indietro", noResults: "Nessun risultato trovato per", resultsFor: "Risultati per", guideContext: "Guida", address: "Indirizzo", tel: "Telefono", sitoWeb: "Sito web", orari: "Orari", ai_modal_title: "Assistente AI", ai_prompt_1: "Descrivi l'atmosfera", ai_prompt_2: "Piano per la serata", ai_prompt_3: "Itinerario a piedi", ai_consulate_title: "Assistenza Consolare", ai_consulate_prompt_1: "Documenti necessari", ai_consulate_prompt_2: "Come registrare il viaggio", ai_consulate_prompt_3: "Bozza email", artTourModalTitle: "Genera Art Tour", artTourModalSubtitle: "Seleziona almeno 2 luoghi", generateTourButton: "Genera Tour", artTourError: "Seleziona almeno 2 luoghi per creare il tour.", artTourPrompt_part1: "Crea un itinerario a piedi che colleghi questi luoghi:", artTourPrompt_part2: "Rispondi in italiano." },
+             en: { backToGuides: "← Back to guides", goBack: "← Go back", noResults: "No results found for", resultsFor: "Results for", guideContext: "Guide", address: "Address", tel: "Phone", sitoWeb: "Website", orari: "Hours", ai_modal_title: "AI Assistant", ai_prompt_1: "Describe the atmosphere", ai_prompt_2: "Evening plan", ai_prompt_3: "Walking itinerary", ai_consulate_title: "Consular Assistance", ai_consulate_prompt_1: "Required documents", ai_consulate_prompt_2: "How to register travel", ai_consulate_prompt_3: "Email draft", artTourModalTitle: "Generate Art Tour", artTourModalSubtitle: "Select at least 2 locations", generateTourButton: "Generate Tour", artTourError: "Select at least 2 locations to create the tour.", artTourPrompt_part1: "Create a walking itinerary connecting these places:", artTourPrompt_part2: "Respond in English." }
+             // altre lingue possono essere aggiunte
+        };
+
+        // --- SAMPLE GUIDES DATA (ridotto) ---
+        let allGuidesData = {
+            ristoranti: {
+                it: {
+                    homepage: { title: "Guida Ristoranti", subtitle: "I migliori locali scelti per te", buttons: { tradizionali: "Tradizionali", etnici: "Etnici", moda: "Alla Moda", pizzerie: "Pizzerie" } },
+                    pages: {
+                        tradizionali: { title: "Ristoranti Tradizionali", infoLabel: "Informazioni", activities: [ { name: "Al Garghet", details: "Cotoletta alla Milanese tradizionale.", meta: { prezzo: "€", address: "Via Esempio 1", tel: "+39 02 0000000" } } ] },
+                        etnici: { title: "Ristoranti Etnici", infoLabel: "Informazioni", activities: [ { name: "Ichikawa", details: "Omakase di alta qualità.", meta: { address: "Via Sushi 2" } } ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "Restaurant Guide", subtitle: "The best places chosen for you", buttons: { tradizionali: "Traditional", etnici: "Ethnic" } },
+                    pages: {
+                        tradizionali: { title: "Traditional Restaurants", infoLabel: "Info", activities: [ { name: "Al Garghet", details: "Thick bone-in Cotoletta alla Milanese.", meta: { address: "Via Esempio 1" } } ] }
+                    }
+                }
+            },
+            arte: {
+                it: {
+                    homepage: { title: "Arte e Musei", subtitle: "Scopri il patrimonio culturale di Milano.", buttons: { masterpieces: "Musei Capolavoro", casemuseo: "Case-Museo" } },
+                    pages: {
+                        masterpieces: { title: "Musei Capolavoro", infoLabel: "Info", activities: [
+                            { name: "Pinacoteca di Brera", details: "Collezioni importanti. Gratuito la prima domenica del mese.", meta: { prezzo: "Variabile", address: "Via Brera" } },
+                            { name: "Museo del Novecento", details: "Arte del XX secolo con vista su Duomo.", meta: { prezzo: "€5", address: "Piazza Duomo, 8" } }
+                        ] },
+                        casemuseo: { title: "Case-Museo", infoLabel: "Info", activities: [
+                            { name: "Museo Poldi Pezzoli", details: "Collezione privata in casa nobiliare.", meta: { address: "Via Poldi 3" } }
+                        ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "Art and Museums", subtitle: "Discover Milan's cultural heritage.", buttons: { masterpieces: "Masterpiece Museums", casemuseo: "House Museums" } },
+                    pages: {
+                        masterpieces: { title: "Masterpiece Museums", infoLabel: "Info", activities: [
+                            { name: "Pinacoteca di Brera", details: "One of Italy's important collections.", meta: { address: "Via Brera" } }
+                        ] }
+                    }
+                }
+            },
+            // altre guide ridotte...
+            argonne: {
+                it: {
+                    homepage: { title: "Mappa di Argonne", subtitle: "Guida al quartiere emergente di Milano.", buttons: { servizi_base: "Servizi e Numeri Utili", ristoranti: "Dove mangiare" } },
+                    pages: {
+                        servizi_base: { title: "Servizi base per l'appartamento", infoLabel: "Dettagli", activities: [
+                            { name: "Esselunga Via Feltre", details: "Supermercato vicino (~350 m).", listItems: ["Orari: 08:00-21:00"], meta: { address: "Via Feltre 30" } }
+                        ] },
+                        ristoranti: { title: "Dove mangiare", infoLabel: "Cucina", activities: [
+                            { name: "Pizzeria Tondo", details: "Pizza napoletana gourmet.", meta: { prezzo: "15-25€", address: "Viale Argonne 10" } }
+                        ] }
+                    }
+                },
+                en: {
+                    homepage: { title: "Argonne Map", subtitle: "Guide to the neighborhood.", buttons: { servizi_base: "Essential Services", ristoranti: "Where to Eat" } },
+                    pages: {
+                        servizi_base: { title: "Apartment Essential Services", infoLabel: "Details", activities: [ { name: "Esselunga Via Feltre", details: "Supermarket nearby.", meta: { address: "Via Feltre 30" } } ] }
+                    }
+                }
+            }
+        };
+
+        // --- DATE PARSING & FILTERING ---
+        const monthMap = {
+            it: { 'gennaio':0,'febbraio':1,'marzo':2,'aprile':3,'maggio':4,'giugno':5,'luglio':6,'agosto':7,'settembre':8,'ottobre':9,'novembre':10,'dicembre':11 },
+            en: { 'january':0,'february':1,'march':2,'april':3,'may':4,'june':5,'july':6,'august':7,'september':8,'october':9,'november':10,'december':11 },
+            fr: { 'janvier':0,'février':1,'mars':2,'avril':3,'mai':4,'juin':5,'juillet':6,'août':7,'septembre':8,'octobre':9,'novembre':10,'décembre':11 },
+            de: { 'januar':0,'februar':1,'märz':2,'april':3,'mai':4,'juni':5,'juli':6,'august':7,'september':8,'oktober':9,'november':10,'dezember':11 },
+            es: { 'enero':0,'febrero':1,'marzo':2,'abril':3,'mayo':4,'junio':5,'julio':6,'agosto':7,'septiembre':8,'octubre':9,'noviembre':10,'diciembre':11 },
+            pt: { 'janeiro':0,'fevereiro':1,'março':2,'abril':3,'maio':4,'junho':5,'julho':6,'agosto':7,'setembro':8,'outubro':9,'novembro':10,'dezembro':11 }
+        };
+
+        function parseDate(dateStr, lang = 'it') {
+            if (!dateStr || typeof dateStr !== 'string') return null;
+            const str = dateStr.toLowerCase().trim();
+
+            let match = str.match(/(\d{1,2})\s+([a-zà-ú]+)/i);
+            if (match) {
+                const day = parseInt(match[1], 10);
+                const monthName = match[2].toLowerCase();
+                const month = monthMap[lang]?.[monthName] ?? monthMap.it[monthName];
+                if (month !== undefined) {
+                    // try to find year, default to current year
+                    const yearMatch = str.match(/(\d{4})/);
+                    const year = yearMatch ? parseInt(yearMatch[1], 10) : (new Date()).getFullYear();
+                    return new Date(year, month, day);
+                }
+            }
+
+            match = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (match) {
+                return new Date(parseInt(match[3], 10), parseInt(match[2], 10) - 1, parseInt(match[1], 10));
+            }
+            return null;
+        }
+
+        function getEventDates(dateStr, lang = 'it') {
+            if (!dateStr || typeof dateStr !== 'string') return { start: null, end: null };
+            const str = dateStr.toLowerCase().trim();
+            let startDate = null, endDate = null;
+
+            let match = str.match(/(\d{1,2})\s*-\s*(\d{1,2})\s+([a-zà-ú]+)\s+(\d{4})/i);
+            if (match) {
+                const month = monthMap[lang]?.[match[3]] ?? monthMap.it[match[3]];
+                if (month !== undefined) {
+                    startDate = new Date(parseInt(match[4], 10), month, parseInt(match[1], 10));
+                    endDate = new Date(parseInt(match[4], 10), month, parseInt(match[2], 10));
+                    return { start: startDate, end: endDate };
+                }
+            }
+
+            match = str.match(/(\d{1,2})\s+([a-zà-ú]+)\s*-\s*(\d{1,2})\s+([a-zà-ú]+)\s+(\d{4})/i);
+            if (match) {
+                const startMonth = monthMap[lang]?.[match[2]] ?? monthMap.it[match[2]];
+                const endMonth = monthMap[lang]?.[match[4]] ?? monthMap.it[match[4]];
+                if (startMonth !== undefined && endMonth !== undefined) {
+                    startDate = new Date(parseInt(match[5], 10), startMonth, parseInt(match[1], 10));
+                    endDate = new Date(parseInt(match[5], 10), endMonth, parseInt(match[3], 10));
+                    return { start: startDate, end: endDate };
+                }
+            }
+
+            match = str.match(/(fino al|until)\s+(.*)/i);
+            if (match) {
+                endDate = parseDate(match[2], lang);
+                return { start: null, end: endDate };
+            }
+
+            match = str.match(/(dal|from)\s+(.*)/i);
+            if (match) {
+                startDate = parseDate(match[2], lang);
+                return { start: startDate, end: null };
+            }
+
+            const single = parseDate(str, lang);
+            if (single) return { start: single, end: single };
+
+            return { start: null, end: null };
+        }
+
+        function filterFutureEvents() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // deep copy shallow dataset so we don't mutate original definition in further runs
+            const filteredGuides = JSON.parse(JSON.stringify(allGuidesData));
+
+            for (const guideKey in filteredGuides) {
+                const guide = filteredGuides[guideKey];
+                for (const lang in guide) {
+                    if (!guide[lang].pages) continue;
+                    for (const pageKey in guide[lang].pages) {
+                        const page = guide[lang].pages[pageKey];
+                        if (Array.isArray(page.activities)) {
+                            page.activities = page.activities.filter(activity => {
+                                const dateInfo = activity.dates || activity.meta?.date || '';
+                                if (!dateInfo || typeof dateInfo !== 'string' || !/\d/.test(dateInfo)) {
+                                    return true; // keep if no date info
+                                }
+                                const { start, end } = getEventDates(dateInfo, lang);
+                                if (end) return end >= today;
+                                if (start) return start >= today;
+                                return true;
+                            });
+                        }
+                    }
+                }
+            }
+            allGuidesData = filteredGuides;
+        }
+
+        // --- CORE FUNCTIONS ---
+        function setActivePage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const element = document.getElementById(pageId);
+            if (element) element.classList.add('active');
+        }
+
+        function showWelcomePage() {
+            currentGuide = null;
+            currentPage = null;
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.value = '';
+            setActivePage('welcome');
+            updateWelcomeUI();
+        }
+
+        function loadGuide(guideId) {
+            currentGuide = guideId;
+            currentPage = null;
+            setActivePage('guide-content');
+            updateGuideUI();
+        }
+
+        function showPage(pageId) {
+            currentPage = pageId;
+            const guideContentEl = document.getElementById('guide-content');
+            const guideData = (allGuidesData[currentGuide]?.[currentLang]?.homepage) ? allGuidesData[currentGuide][currentLang] : allGuidesData[currentGuide]?.it;
+            const pageData = guideData?.pages?.[pageId];
+
+            if (!pageData) { loadGuide(currentGuide); return; }
+
+            const backButtonText = (LABELS[currentLang] || LABELS.it).goBack;
+
+            let mainContent;
+            if (pageData.itineraries) {
+                mainContent = pageData.itineraries.map(createItineraryCard).join('');
+            } else if (pageData.activities && pageData.activities.length > 0) {
+                mainContent = pageData.activities.map(activity => createActivityCard(activity, pageData.infoLabel)).join('');
+            } else {
+                mainContent = `<div class="p-4 text-center text-bianco opacity-80">Nessun contenuto disponibile.</div>`;
+            }
+
+            guideContentEl.innerHTML = `
+                <header class="flex items-center mb-6 pb-4 border-b border-ottanio-light/20">
+                    <button onclick="loadGuide('${currentGuide}')" class="font-bold text-lg mr-4 text-verde-light">${backButtonText}</button>
+                    <h2 class="text-2xl font-bold text-bianco">${escapeHtml(pageData.title)}</h2>
+                </header>
+                <main>${mainContent}</main>
+            `;
+        }
+
+        // sanitize minimal helper
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // --- UI RENDERING FUNCTIONS ---
+        function updateWelcomeUI() {
+            const textData = welcomeText[currentLang] || welcomeText.it;
+            document.getElementById('welcome-title').innerText = textData.title;
+            document.getElementById('welcome-subtitle').innerText = textData.subtitle;
+            document.getElementById('search-input').placeholder = textData.searchPlaceholder;
+
+            const buttonsContainer = document.getElementById('welcome-buttons');
+            buttonsContainer.innerHTML = '';
+
+            const buttonKeys = ['ristoranti', 'autunno', 'arte', 'museum4free', 'nolo', 'argonne', 'mobilita', 'servizi', 'sicurezza'];
+            buttonKeys.forEach(key => {
+                const button = document.createElement('button');
+                button.onclick = () => loadGuide(key);
+                button.className = `w-full btn bg-verde-light text-ottanio py-4 rounded-lg text-lg font-bold border-2 border-magenta shadow-lg hover:shadow-xl`;
+                button.innerText = textData[key] || (key.charAt(0).toUpperCase() + key.slice(1));
+                buttonsContainer.appendChild(button);
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                const isActive = btn.dataset.lang === currentLang;
+                btn.classList.toggle('active', isActive);
+                btn.classList.toggle('opacity-60', !isActive);
+                btn.setAttribute('aria-pressed', isActive ? "true" : "false");
+            });
+        }
+
+        function updateGuideUI() {
+            if (!currentGuide) return;
+            const guideData = (allGuidesData[currentGuide]?.[currentLang]?.homepage) ? allGuidesData[currentGuide][currentLang] : allGuidesData[currentGuide]?.it;
+            const pageElement = document.getElementById('guide-content');
+            const backButtonText = (LABELS[currentLang] || LABELS.it).backToGuides;
+
+            if (!guideData || !guideData.homepage) {
+                pageElement.innerHTML = `
+                    <header class="flex items-center mb-6 pb-4 border-b border-ottanio-light/20">
+                        <button onclick="showWelcomePage()" class="font-bold text-lg mr-4 text-verde-light">${backButtonText}</button>
+                        <h2 class="text-2xl font-bold text-bianco">Contenuto non disponibile</h2>
+                    </header>`;
+                return;
+            }
+
+            let buttonsHtml = '';
+            for (const key in guideData.homepage.buttons) {
+                const label = guideData.homepage.buttons[key] || key;
+                buttonsHtml += `<button onclick="showPage('${key}')" class="w-full mb-3 btn bg-verde-light text-ottanio py-4 rounded-lg text-lg font-bold border-2 border-magenta shadow-lg hover:shadow-xl">${escapeHtml(label)}</button>`;
+            }
+
+            // special Art tour button
+            if (currentGuide === 'arte') {
+                const labels = LABELS[currentLang] || LABELS.it;
+                buttonsHtml += `<button onclick="openArtTourModal()" class="w-full btn bg-magenta-light text-ottanio py-4 rounded-lg text-lg font-bold border-2 border-magenta shadow-lg hover:shadow-xl">${escapeHtml(labels.artTourModalTitle || 'Genera Art Tour')}</button>`;
+            }
+
+            pageElement.innerHTML = `
+                <header class="flex items-center mb-6 pb-4 border-b border-ottanio-light/20">
+                    <button onclick="showWelcomePage()" class="font-bold text-lg mr-4 text-verde-light">${backButtonText}</button>
+                    <h2 class="text-2xl font-bold text-bianco">${escapeHtml(guideData.homepage.title)}</h2>
+                </header>
+                <main class="space-y-4">${buttonsHtml}</main>
+            `;
+        }
+
+        function createActivityCard(activity, infoLabel) {
+            const labels = LABELS[currentLang] || LABELS.it;
+            const meta = activity.meta || {};
+
+            let extraInfoHtml = '';
+            if (meta.address) {
+                extraInfoHtml += `<p class="mt-2 text-ottanio-light opacity-80"><strong class="font-semibold text-ottanio-light">${labels.address}:</strong> ${escapeHtml(meta.address)}</p>`;
+            }
+            if (meta.orari) {
+                extraInfoHtml += `<p class="mt-1 text-ottanio-light opacity-80"><strong class="font-semibold text-ottanio-light">${labels.orari}:</strong> ${escapeHtml(meta.orari)}</p>`;
+            }
+            if (meta.tel) {
+                extraInfoHtml += `<p class="mt-1 text-ottanio-light opacity-80"><strong class="font-semibold text-ottanio-light">${labels.tel}:</strong> <a href="tel:${meta.tel.replace(/\s/g, '')}" class="underline text-ottanio-light">${escapeHtml(meta.tel)}</a></p>`;
+            }
+            if (meta.sitoWeb) {
+                extraInfoHtml += `<p class="mt-1 text-ottanio-light opacity-80"><strong class="font-semibold text-ottanio-light">${labels.sitoWeb}:</strong> <a href="${escapeHtml(meta.sitoWeb)}" target="_blank" rel="noopener noreferrer" class="underline text-ottanio-light">${escapeHtml(meta.sitoWeb)}</a></p>`;
+            }
+
+            let detailsHtml;
+            if (activity.listItems) {
+                detailsHtml = `
+                    <div class="font-bold text-bianco mb-2">${escapeHtml(activity.name)}</div>
+                    <ul class="list-disc space-y-1 text-sm text-ottanio-light">
+                        ${activity.listItems.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+                    </ul>`;
+            } else {
+                detailsHtml = `<p class="text-sm font-semibold text-ottanio-light">${escapeHtml(infoLabel)}:</p><p class="mt-1 text-ottanio-light opacity-90">${escapeHtml(activity.details)}</p>${extraInfoHtml}`;
+            }
+
+            const aiButtonHtml = currentGuide === 'ristoranti'
+                ? `<div class="mt-3"><button onclick="openAiModal('${escapeHtml(activity.name)}', '${escapeHtml(activity.details)}', '${escapeHtml(meta.address || '')}')" class="btn bg-verde text-bianco px-3 py-2 rounded-lg font-bold">✨ Assistente AI</button></div>`
+                : '';
+
+            const dateOrPrice = activity.dates || meta.prezzo || '';
+
+            return `
+                <div class="bg-white/10 p-4 rounded-lg mb-4 shadow-lg">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
+                        <h3 class="font-bold text-xl text-bianco mb-2 sm:mb-0 break-words">${escapeHtml(activity.name)}</h3>
+                        ${dateOrPrice ? `<span class="text-sm font-bold px-2 py-1 rounded-full bg-verde text-bianco self-start sm:self-center whitespace-nowrap">${escapeHtml(dateOrPrice)}</span>` : ''}
+                    </div>
+                    <div class="mt-3 break-words">${detailsHtml}</div>
+                    ${aiButtonHtml}
+                </div>`;
+        }
+
+        function createItineraryCard(itinerary) {
+            return `
+                <div class="bg-white/10 p-4 rounded-lg mb-4 shadow-lg">
+                    <h3 class="font-bold text-xl text-bianco">${escapeHtml(itinerary.title)}</h3>
+                    <p class="mt-2 text-ottanio-light opacity-90">${escapeHtml(itinerary.description)}</p>
+                </div>`;
+        }
+
+        // --- SEARCH FUNCTIONS ---
+        function handleSearch(query) {
+            const results = [];
+            const lowerCaseQuery = query.toLowerCase();
+
+            for (const guideId in allGuidesData) {
+                const guide = (allGuidesData[guideId]?.[currentLang]?.homepage) ? allGuidesData[guideId][currentLang] : allGuidesData[guideId]?.it;
+                if (!guide?.pages) continue;
+
+                for (const pageId in guide.pages) {
+                    const page = guide.pages[pageId];
+                    const matchInPageTitle = page.title && page.title.toLowerCase().includes(lowerCaseQuery);
+
+                    if (matchInPageTitle) {
+                        results.push({ type: 'page', guideId, pageId, name: page.title, details: `${(LABELS[currentLang] || LABELS.it).guideContext}: ${guide.homepage.title}` });
+                    }
+
+                    if (page.activities) {
+                        page.activities.forEach(activity => {
+                            const activityText = `${activity.name} ${activity.details} ${activity.meta?.address || ''}`.toLowerCase();
+                            if (activityText.includes(lowerCaseQuery) && !results.some(r => r.name === activity.name)) {
+                                results.push({
+                                    type: 'activity', guideId, pageId, name: activity.name, details: activity.details,
+                                    meta: activity.meta,
+                                    context: `${(LABELS[currentLang] || LABELS.it).guideContext}: ${guide.homepage.title} > ${page.title}`
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+            displaySearchResults(results, query);
+        }
+
+        function displaySearchResults(results, query) {
+            setActivePage('search-results');
+            const searchResultsElement = document.getElementById('search-results');
+            const labels = LABELS[currentLang] || LABELS.it;
+
+            let resultsHtml = `
+                <header class="flex items-center mb-6 pb-4 border-b border-ottanio-light/20">
+                    <button onclick="showWelcomePage()" class="font-bold text-lg mr-4 text-verde-light">${labels.backToGuides}</button>
+                    <h2 class="text-2xl font-bold text-bianco">${labels.resultsFor} "${escapeHtml(query)}"</h2>
+                </header>
+                <main class="space-y-4">`;
+
+            if (results.length > 0) {
+                resultsHtml += results.map(result => {
+                    return `
+                        <div class="bg-white/10 p-4 rounded-lg shadow-sm cursor-pointer" onclick="loadGuideAndShowPage('${result.guideId}', '${result.pageId}')">
+                            <h3 class="font-bold text-xl text-bianco">${escapeHtml(result.name)}</h3>
+                            <p class="mt-1 text-sm text-ottanio-light opacity-80">${escapeHtml(result.context || result.details)}</p>
+                        </div>`;
+                }).join('');
+            } else {
+                resultsHtml += `<p class="text-center text-ottanio-light">${labels.noResults} "${escapeHtml(query)}".</p>`;
+            }
+
+            resultsHtml += `</main>`;
+            searchResultsElement.innerHTML = resultsHtml;
+        }
+
+        function loadGuideAndShowPage(guideId, pageId) {
+            currentGuide = guideId;
+            showPage(pageId);
+        }
+
+        // --- GEMINI API & AI MODAL FUNCTIONS ---
+        function openAiModal(name, details, address) {
+            const modal = document.getElementById('ai-modal');
+            const modalBody = document.getElementById('ai-modal-body');
+            const labels = LABELS[currentLang] || LABELS.it;
+
+            const atmospherePrompt = `Sei una guida locale esperta di Milano. Descrivi in 2-3 frasi l'atmosfera e l'occasione ideale per una serata al ristorante '${name}', conosciuto per: '${details}'.`;
+            const eveningPrompt = `Sei un concierge. Crea un breve piano per una serata che include una cena al ristorante '${name}' e suggerisci un posto per un aperitivo nelle vicinanze.`;
+            const itineraryPrompt = `Sei una guida turistica. Un utente si trova al ristorante '${name}' all'indirizzo '${address}'. Crea un breve itinerario a piedi di 1-2 ore per esplorare la zona.`;
+
+            modalBody.innerHTML = `
+                <h2 id="modal-title" class="text-2xl font-bold text-center mb-4">${escapeHtml(labels.ai_modal_title || 'Assistente AI')}</h2>
+                <p class="text-center text-ottanio mb-1 font-semibold">${escapeHtml(name)}</p>
+                <div class="space-y-3 mt-4">
+                    <button onclick="callGemini('${atmospherePrompt.replace(/'/g, \"\\'\")}', null, null, null)" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${escapeHtml(labels.ai_prompt_1)}</button>
+                    <button onclick="callGemini('${eveningPrompt.replace(/'/g, \"\\'\")}', null, null, null)" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${escapeHtml(labels.ai_prompt_2)}</button>
+                    <button onclick="callGemini('${itineraryPrompt.replace(/'/g, \"\\'\")}', null, null, null)" class="w-full btn bg-verde-light text-ottanio p-3 rounded-lg font-semibold">${escapeHtml(labels.ai_prompt_3)}</button>
+                </div>
+                <div id="ai-response-area" class="mt-4"></div>
+            `;
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function openArtTourModal() {
+            const modal = document.getElementById('ai-modal');
+            const modalBody = document.getElementById('ai-modal-body');
+            const labels = LABELS[currentLang] || LABELS.it;
+            const artGuide = allGuidesData.arte?.[currentLang] || allGuidesData.arte?.it;
+
+            if (!artGuide || !artGuide.pages) {
+                modalBody.innerHTML = `<div class="p-4">${escapeHtml(labels.artTourError || 'Contenuto non disponibile.')}</div>`;
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                return;
+            }
+
+            let checkboxesHtml = '<form id="art-tour-form" class="max-h-[50vh] overflow-y-auto pr-2">';
+            for (const pageKey in artGuide.pages) {
+                const page = artGuide.pages[pageKey];
+                checkboxesHtml += `<h4 class="font-bold text-lg text-ottanio mt-4 mb-2">${escapeHtml(page.title)}</h4>`;
+                (page.activities || []).forEach(activity => {
+                    const activityId = `art_${activity.name.replace(/\s/g, '_')}`;
+                    const addr = activity.meta?.address || '';
+                    checkboxesHtml += `
+                        <div class="flex items-center my-2">
+                            <input type="checkbox" id="${activityId}" name="art_location" value="${escapeHtml(activity.name)}" data-address="${escapeHtml(addr)}" class="h-4 w-4 rounded border-gray-300">
+                            <label for="${activityId}" class="ml-3 block text-sm font-medium text-ottanio-light">${escapeHtml(activity.name)}</label>
+                        </div>`;
+                });
+            }
+            checkboxesHtml += '</form>';
+
+            modalBody.innerHTML = `
+                <h2 class="text-2xl font-bold text-center mb-2">${escapeHtml(labels.artTourModalTitle)}</h2>
+                <p class="text-center text-ottanio mb-4">${escapeHtml(labels.artTourModalSubtitle)}</p>
+                ${checkboxesHtml}
+                <button type="button" onclick="generateArtTour()" class="w-full btn bg-verde text-bianco p-3 rounded-lg font-bold mt-6">${escapeHtml(labels.generateTourButton)}</button>
+                <div id="ai-response-area" class="mt-4"></div>
+            `;
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function generateArtTour() {
+            const form = document.getElementById('art-tour-form');
+            const selectedCheckboxes = Array.from(form.querySelectorAll('input[name="art_location"]:checked'));
+            const labels = LABELS[currentLang] || LABELS.it;
+            const responseArea = document.getElementById('ai-response-area');
+
+            if (selectedCheckboxes.length < 2) {
+                responseArea.innerHTML = `<div class="ai-response text-magenta">${escapeHtml(labels.artTourError)}</div>`;
+                return;
+            }
+
+            const locationsList = selectedCheckboxes.map(cb => `${cb.value} (indirizzo: ${cb.dataset.address || 'n/a'})`).join('; ');
+            const prompt = `${labels.artTourPrompt_part1} ${locationsList}. ${labels.artTourPrompt_part2.replace('italiano', currentLang)}`;
+
+            callGemini(prompt, 3, 1000, responseArea);
+        }
+
+        function closeAiModal() {
+            const modal = document.getElementById('ai-modal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.getElementById('ai-modal-body').innerHTML = '';
+        }
+
+        // IMPORTANT: Replace YOUR_API_KEY_HERE with a secure server-side key retrieval in production.
+        async function callGemini(prompt, retries = 3, delay = 1000, responseEl) {
+            const responseArea = responseEl || document.getElementById('ai-response-area');
+            responseArea.innerHTML = '<div class="loader" aria-hidden="true"></div>';
+
+            const apiKey = "YOUR_API_KEY_HERE"; // <<-- DO NOT commit real API keys to public repos. Use server-side proxy.
+            if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
+                responseArea.innerHTML = `<div class="ai-response">API key non configurata. Configura una chiave lato server per chiamare l'API generativa.</div>`;
+                return;
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            const payload = {
+                prompt: { text: prompt },
+                temperature: 0.7
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                // attempt to find text in result
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || result.output?.[0]?.content?.text || JSON.stringify(result, null, 2);
+
+                if (text) {
+                    responseArea.innerHTML = `<div class="ai-response">${escapeHtml(text)}</div>`;
+                } else {
+                    throw new Error("No content received from API.");
+                }
+
+            } catch (error) {
+                if (retries > 0) {
+                    await new Promise(res => setTimeout(res, delay));
+                    return callGemini(prompt, retries - 1, delay * 2, responseArea);
+                } else {
+                    console.error("Error calling Gemini API:", error);
+                    responseArea.innerHTML = `<div class="ai-response text-magenta">Si è verificato un errore durante la chiamata all'API. Riprova più tardi.</div>`;
+                }
+            }
+        }
+
+        // --- EVENT LISTENERS & INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            filterFutureEvents();
+            updateWelcomeUI();
+
+            document.getElementById('lang-switcher').addEventListener('click', (event) => {
+                const target = event.target.closest('.lang-btn');
+                if (target) {
+                    currentLang = target.dataset.lang;
+                    updateWelcomeUI();
+                    if (document.getElementById('search-results').classList.contains('active')) {
+                        showWelcomePage();
+                    } else if (currentPage && currentGuide) {
+                        showPage(currentPage);
+                    } else if (currentGuide) {
+                        loadGuide(currentGuide);
+                    }
+                }
+            });
+
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter' && searchInput.value.trim() !== '') {
+                    handleSearch(searchInput.value.trim());
+                }
+            });
+        });
+    </script>
+</body>
+</html>
