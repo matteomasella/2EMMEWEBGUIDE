@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guida Milano - Natale & Lifestyle</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'ottanio': '#004D54',
+              'ottanio-light': '#BFEBFF',
+              'magenta': '#DB4F61',         /* Colore PRO/Active */
+              'magenta-light': '#F5C9D1',
+              'verde': '#54C4A6',
+              'verde-light': '#CCEDE5',
+              'bianco': '#FFFFFF',
+              'nero': '#000000',
+              'grigio-chiaro': '#f9fafb',
+            }
+          }
+        }
+      }
+    </script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #004D54; }
+        
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .btn { transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 10px rgba(0,0,0,0.15); }
+        
+        .lang-btn.active { background-color: #54C4A6; color: #FFFFFF; font-weight: 700; }
+        
+        .list-disc { list-style-type: none; padding-left: 0; }
+        .list-disc li { position: relative; padding-left: 1.5em; margin-bottom: 0.5rem; }
+        .list-disc li::before { content: '•'; position: absolute; left: 0.5em; color: #DB4F61; font-weight: bold; font-size: 1.2em; }
+
+        input:focus { border-color: #DB4F61 !important; box-shadow: 0 0 0 2px rgba(219, 79, 97, 0.3); }
+        
+        .activity-card { transition: all 0.2s; border-left: 4px solid transparent; }
+        .activity-card:hover { background-color: rgba(255,255,255,0.15); border-left-color: #DB4F61; }
+        
+        .fallback-notice { background: rgba(219,79,97,0.2); border: 1px solid #DB4F61; color: #F5C9D1; padding: 0.5rem; text-align: center; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; }
+
+        /* MODALE AI */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center;
+            z-index: 2000;
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.2s; }
+        
+        .modal-content {
+            background-color: white; padding: 2rem; border-radius: 12px;
+            width: 90%; max-width: 450px; color: #004D54;
+            max-height: 85vh; overflow-y: auto; border-top: 6px solid #DB4F61; position: relative;
+        }
+        
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2rem; cursor: pointer; color: #999; line-height: 1; }
+        .modal-close:hover { color: #DB4F61; }
+
+        .ai-response-box {
+            /* Stile modificato per messaggio WIP */
+            background-color: #f0fdfa; /* Verde chiarissimo */
+            border: 2px dashed #54C4A6; /* Bordo verde tratteggiato */
+            padding: 1.5rem; margin-top: 1rem; border-radius: 12px;
+            font-size: 0.95rem; line-height: 1.5; color: #004D54;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-ottanio">
+
+    <div id="app-container" class="max-w-md mx-auto min-h-dvh bg-ottanio shadow-2xl relative">
+
+        <div id="welcome" class="page active p-6">
+            <div class="flex justify-end mb-4" id="lang-switcher">
+                <button class="lang-btn active px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm" data-lang="it">IT</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="en">EN</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="fr">FR</button>
+                <button class="lang-btn ml-2 px-3 py-1 rounded-full bg-verde-light text-ottanio font-semibold text-sm opacity-60" data-lang="es">ES</button>
+            </div>
+            <header class="text-center mb-6">
+                <div class="flex justify-center items-center gap-4 mb-2">
+                    <img src="https://i.ibb.co/6g2xYfW/logosfottanio.png" class="w-24 h-24 mb-4 object-contain" alt="Logo">
+                </div>
+                <h1 class="text-3xl font-bold text-bianco" id="welcome-title"></h1>
+                <p class="text-ottanio-light opacity-80" id="welcome-subtitle"></p>
+            </header>
+            
+            <div class="mb-6">
+                <input type="text" id="search-input" class="w-full p-3 rounded-lg border-2 bg-white/10 border-ottanio-light/20 focus:outline-none focus:border-magenta text-bianco placeholder-ottanio-light/70 transition-colors">
+            </div>
+
+            <main class="space-y-4" id="welcome-buttons"></main>
+        </div>
+
+        <div id="guide-content" class="page p-6"></div>
+        
+        <div id="search-results" class="page p-6"></div>
+
+    </div>
+
+    <div id="ai-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span onclick="closeAiModal()" class="modal-close">×</span>
+            <h2 id="ai-title" class="text-xl font-bold text-ottanio mb-1">Assistente AI</h2>
+            <p class="text-sm text-gray-500 mb-4">Seleziona un'azione:</p>
+            <div id="ai-actions" class="flex flex-col gap-2"></div>
+            <div id="ai-result" class="mt-4 hidden">
+                <div class="ai-response-box" id="ai-text"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 🔑 CONFIGURAZIONE API: DISABILITATA PER SICUREZZA
+        // ============================================================
+        // Ho lasciato la stringa vuota così il deploy non fallisce.
+        const GEMINI_API_KEY = ""; 
+        // ============================================================
+
+        let currentGuide = null;
+        let currentPage = null;
+        let currentLang = 'it';
+        let pageActivitiesCache = [];
+
+        // UI Text
+        const uiText = {
+            it: { title: "Guida a Milano", subtitle: "Scegli l'esperienza perfetta", back: "← Guide", home: "← Home", no_results: "Nessun risultato", fallback: "Contenuto in Italiano.", ai_btn: "✨ Chiedi all'IA", art_btn: "✨ Crea Tour IA" },
+            en: { title: "Milan Guide", subtitle: "Choose your experience", back: "← Guides", home: "← Home", no_results: "No results", fallback: "Content in Italian.", ai_btn: "✨ Ask AI", art_btn: "✨ Create Art Tour" },
+            fr: { title: "Guide de Milan", subtitle: "Choisissez votre expérience", back: "← Guides", home: "← Accueil", no_results: "Aucun résultat", fallback: "Contenu en Italien.", ai_btn: "✨ Demander à l'IA", art_btn: "✨ Créer Tour IA" },
+            es: { title: "Guía de Milán", subtitle: "Elige tu experiencia", back: "← Guías", home: "← Inicio", no_results: "Sin resultados", fallback: "Contenido en Italiano.", ai_btn: "✨ Preguntar a IA", art_btn: "✨ Crear Tour IA" }
+        };
+
+        const categories = {
+            it: { ristoranti: "🍽️ Ristoranti", natale: "🎄 Natale & Capodanno", arte: "🎨 Arte e Musei", museum4free: "🖼️ #Museum4Free", nolo: "🗺️ NoLo District", servizi: "☎️ Servizi Utili", sicurezza: "⚠️ Sicurezza", mobilita: "🚇 Mobilità" },
+            en: { ristoranti: "🍽️ Restaurants", natale: "🎄 Christmas & NYE", arte: "🎨 Art & Museums", museum4free: "🖼️ #Museum4Free", nolo: "🗺️ NoLo District", servizi: "☎️ Services", sicurezza: "⚠️ Safety", mobilita: "🚇 Mobility" },
+            fr: { ristoranti: "🍽️ Restaurants", natale: "🎄 Noël & Nouvel An", arte: "🎨 Art et Musées", museum4free: "🖼️ #MuséeGratuit", nolo: "🗺️ Quartier NoLo", servizi: "☎️ Services", sicurezza: "⚠️ Sécurité", mobilita: "🚇 Mobilité" },
+            es: { ristoranti: "🍽️ Restaurantes", natale: "🎄 Navidad y Año Nuevo", arte: "🎨 Arte y Museos", museum4free: "🖼️ #MuseoGratis", nolo: "🗺️ Distrito NoLo", servicios: "☎️ Servicios", seguridad: "⚠️ Seguridad", mobilita: "🚇 Movilidad" }
+        };
+
+        // --- DATABASE COMPLETO ---
+        let allGuidesData = {
+            ristoranti: {
+              it: {
+                  homepage: { title: "Guida Ristoranti", subtitle: "I migliori locali scelti per te", buttons: { tradizionali: "Tradizionali", etnici: "Etnici", moda: "Alla Moda", pizzerie: "Pizzerie", vegani: "Vegani/Vegetariani", suggerimenti: "Itinerari Suggeriti" } },
+                  pages: {
+                      tradizionali: { title: "Tradizionali", infoLabel: "Info", activities: [ { name: "Al Garghet", details: "Cotoletta alla Milanese spessa. Atmosfera rurale e romantica.", meta: { prezzo: "50-70€", address: "Via Selvanesco, 36" } }, { name: "La Pobbia 1850", details: "Risotto giallo con Ossobuco. Bib Gourmand Michelin.", meta: { prezzo: "60-80€", address: "Via Gallarate, 92" } }, { name: "Premiata Trattoria Arlati", details: "Ossobuco con riso al salto. Ambiente artistico.", meta: { prezzo: "45-60€", address: "Via Alberto Nota, 47" } }, { name: "Antica Trattoria della Pesa", details: "Risotto e Cotoletta. Storica trattoria milanese.", meta: { prezzo: "55-90€", address: "Viale Pasubio, 10" } }, { name: "Trippa", details: "Osteria moderna molto richiesta. Piatti di quinto quarto.", meta: { prezzo: "40-60€", address: "Via Giorgio Vasari, 1" } } ] },
+                      etnici: { title: "Etnici", infoLabel: "Info", activities: [ { name: "Ichikawa", details: "Giapponese Alta Cucina. Menù Omakase.", meta: { prezzo: "120€+", address: "Via Lazzaro Papi, 18" } }, { name: "Pacifico", details: "Peruviana (Nikkei). Trendy e cocktail.", meta: { prezzo: "70-90€", address: "Via della Moscova, 29" } }, { name: "Serendib", details: "Indiano / Sri Lankese. Michelin Bib Gourmand.", meta: { prezzo: "30-40€", address: "Via Pontida, 2" } }, { name: "Mezè", details: "Libanese autentico. Da condividere.", meta: { prezzo: "50-70€", address: "Via Sottocorno 19/a" } } ] },
+                      moda: { title: "Alla Moda", infoLabel: "Info", activities: [ { name: "Enrico Bartolini al Mudec", details: "3 Stelle Michelin. Il vertice gastronomico.", meta: { prezzo: "240€+", address: "Via Tortona, 56" } }, { name: "Cracco in Galleria", details: "Cucina d'Autore in location iconica.", meta: { prezzo: "210€", address: "Galleria Vittorio Emanuele II" } }, { name: "Autem*", details: "Cucina di Mercato. 1 Stella Michelin.", meta: { prezzo: "95€+", address: "Via Serviliano Lattuada, 2" } } ] },
+                      pizzerie: { title: "Pizzerie", infoLabel: "Info", activities: [ { name: "Dry Milano", details: "Pizza & Cocktail. Icona di stile.", meta: { prezzo: "20-30€", address: "Via Solferino, 33" } }, { name: "Crosta", details: "Impasti eccellenti. Gambero Rosso.", meta: { prezzo: "15-25€", address: "Via Felice Bellotti, 13" } }, { name: "Gino Sorbillo", details: "Classica Napoletana.", meta: { prezzo: "10-15€", address: "Largo Corsia dei Servi, 11" } } ] },
+                      vegani: { title: "Vegani e Vegetariani", infoLabel: "Info", activities: [ { name: "Joia", details: "Alta cucina vegetariana. Stella Michelin.", meta: { prezzo: "100€+", address: "Via Panfilo Castaldi, 18" } }, { name: "Linfa", details: "Fine dining vegetale.", meta: { prezzo: "60-80€", address: "Via Bergognone, 24" } }, { name: "Flower Burger", details: "Burger vegani colorati. Divertente.", meta: { prezzo: "15-25€", address: "Viale Vittorio Veneto, 10" } } ] },
+                      suggerimenti: { title: "Itinerari Suggeriti", itineraries: [ { title: "Giorno da Milanese", description: "Pranzo: La Pobbia 1850. Cena: Trattoria Arlati." }, { title: "Giro del Mondo", description: "Pranzo: Mezè (Libanese). Cena: Pacifico (Peruviano)." }, { title: "Serata Glamour", description: "Cena da Autem* o Stendhal Milano." } ] }
+                  }
+              },
+              en: { homepage: {} } // Fallback
+            },
+            natale: {
+                it: {
+                    homepage: { 
+                        title: "Natale e Capodanno", 
+                        subtitle: "La magia delle feste a Milano.", 
+                        buttons: { must_do: "🎅 Le 10 cose da non perdere", itinerari: "✨ Itinerari (Romantico/Family)", capodanno: "🥂 Guida al Capodanno", info_pratiche: "ℹ️ Info Pratiche & Mappa" } 
+                    },
+                    pages: {
+                        must_do: {
+                            title: "Le 10 cose da non perdere",
+                            infoLabel: "Dettagli",
+                            activities: [
+                                { name: "Mercatino in Piazza Duomo", details: "Casette, artigianato e l'albero davanti alla Cattedrale. Iconico.", dates: "1 Dic - 6 Gen", meta: { address: "Piazza del Duomo", prezzo: "Gratuito" } },
+                                { name: "Villaggio delle Meraviglie", details: "Giostre, pista di pattinaggio e casa di Babbo Natale. Ideale per famiglie.", dates: "Metà Nov - 6 Gen", meta: { address: "Giardini Indro Montanelli", prezzo: "Ingresso Parco Gratis" } },
+                                { name: "Oh Bej! Oh Bej!", details: "Storica fiera di Sant'Ambrogio. Bancarelle tradizionali e atmosfera unica.", dates: "5 - 8 Dicembre", meta: { address: "Castello Sforzesco", prezzo: "Gratuito" } },
+                                { name: "Pattinaggio in Gae Aulenti", details: "Pista scenografica tra i grattacieli moderni.", dates: "Nov - Feb", meta: { address: "Piazza Gae Aulenti", prezzo: "~10€" } },
+                                { name: "Galleria Vittorio Emanuele", details: "Accensione dell'albero e luminarie nel 'Salotto di Milano'.", dates: "Dal 6 Dic", meta: { address: "Piazza Duomo", prezzo: "Gratuito" } },
+                                { name: "Concerto alla Scala", details: "Esperienza elegante nel teatro più famoso del mondo.", dates: "Dicembre", meta: { address: "Via Filodrammatici 2", prezzo: "Su prenotazione" } },
+                                { name: "Shopping nel Quadrilatero", details: "Vetrine spettacolari in Via Montenapoleone.", dates: "Nov - Gen", meta: { address: "Via Montenapoleone", prezzo: "Gratuito" } },
+                                { name: "Luci sui Navigli", details: "Passeggiata romantica serale con luci riflesse sull'acqua.", dates: "Periodo natalizio", meta: { address: "Naviglio Grande", prezzo: "Gratuito" } },
+                                { name: "Panettone Artigianale", details: "Assaggia il vero panettone da Marchesi, Cova o Peck.", dates: "Sempre", meta: { address: "Pasticceria Marchesi", prezzo: "Variabile" } },
+                                { name: "Castello Sforzesco", details: "Musei e atmosfera storica nel parco innevato.", dates: "Mar-Dom", meta: { address: "Piazza Castello", prezzo: "Cortili Gratis" } }
+                            ]
+                        },
+                        itinerari: {
+                            title: "Itinerari Consigliati",
+                            infoLabel: "Piano",
+                            activities: [
+                                { name: "❤️ Serata Romantica", details: "Ore 16:00: Aperitivo su Terrazza Rinascente (Duomo). Ore 17:15: Passeggiata in Galleria verso Brera. Ore 19:00: Cena intima in Brera. Ore 21:30: Passeggiata sui Navigli. Ore 23:30: Jazz al Blue Note.", listItems: ["Tappa 1: Duomo", "Tappa 2: Brera", "Tappa 3: Navigli"] },
+                                { name: "👨‍👩‍👧‍👦 Family Day", details: "Mattina: Piazza Duomo e Mercatino. Pomeriggio: Villaggio delle Meraviglie (Giostre). Sera: Cioccolata calda in centro.", listItems: ["Tappa 1: Duomo", "Tappa 2: Giardini Montanelli"] },
+                                { name: "🛍️ Shopping Glamour", details: "Mattina: Rinascente. Pranzo: Quadrilatero della Moda. Pomeriggio: Via Montenapoleone. Aperitivo: Porta Nuova.", listItems: ["Tappa 1: Quadrilatero", "Tappa 2: Porta Nuova"] }
+                            ]
+                        },
+                        capodanno: {
+                            title: "Guida al Capodanno",
+                            infoLabel: "Dettagli",
+                            activities: [
+                                { name: "⚠️ COSA SAPERE", details: "Niente concertone in Duomo quest'anno. Accessi limitati alle piazze. Prenotare tutto in anticipo.", meta: { prezzo: "Info" } },
+                                { name: "🎉 Fabrique", details: "Grande party 'Radio 105 in the City'. Pubblico giovane.", dates: "31 Dic 20:00+", meta: { address: "Via Fantoli 9", prezzo: "30€+" } },
+                                { name: "💃 Alcatraz", details: "Gran Galà: Cenone, Show e Discoteca. Per gruppi.", dates: "31 Dic 19:30+", meta: { address: "Via Valtellina 25", prezzo: "Variabile" } },
+                                { name: "🎷 Blue Note", details: "Cenone e Jazz raffinato. Ideale per coppie.", dates: "31 Dic", meta: { address: "Via Pietro Borsieri 37", prezzo: "Su prenotazione" } },
+                                { name: "🌊 Canottieri Olona", details: "Cenone romantico sul Naviglio.", dates: "31 Dic", meta: { address: "Alzaia Naviglio Grande 144", prezzo: "70-120€" } }
+                            ]
+                        },
+                        info_pratiche: {
+                            title: "Info Pratiche",
+                            infoLabel: "Info",
+                            activities: [
+                                { name: "🗺️ Mappa Google", details: "Clicca per aprire la mappa con i punti salienti.", meta: { sitoWeb: "https://www.google.com/maps/search/Milano+Duomo+Brera+Navigli" } },
+                                { name: "👗 Abbigliamento", details: "Fa freddo! Cappotto pesante, sciarpa, guanti e scarpe comode.", meta: { prezzo: "Inverno" } },
+                                { name: "🚇 Trasporti", details: "Usa Metro/Tram. Evita l'auto (Area C).", meta: { prezzo: "ATM" } }
+                            ]
+                        }
+                    }
+                }
+            },
+            arte: {
+              it: {
+                  homepage: { title: "Arte e Musei", subtitle: "Scopri il patrimonio culturale.", buttons: { masterpieces: "🏛️ Musei Capolavoro", casemuseo: "🏠 Case-Museo", fondazioni: "🌟 Fondazioni" } },
+                  pages: {
+                      masterpieces: { title: "Musei Capolavoro", infoLabel: "Info", activities: [ { name: "Pinacoteca di Brera", details: "Capolavori di Raffaello e Caravaggio.", meta: { address: "Via Brera, 28" } }, { name: "Museo del Novecento", details: "Arte del XX secolo vista Duomo.", meta: { address: "Piazza Duomo, 8" } }, { name: "Ultima Cena (Cenacolo)", details: "Capolavoro di Leonardo.", meta: { address: "Piazza Santa Maria delle Grazie", prezzo: "Prenotazione obbligatoria" } } ] },
+                      casemuseo: { title: "Case-Museo", infoLabel: "Info", activities: [ { name: "Museo Poldi Pezzoli", details: "Casa nobiliare del XIX secolo.", meta: { address: "Via Manzoni, 12" } }, { name: "Villa Necchi Campiglio", details: "Icona del razionalismo (FAI).", meta: { address: "Via Mozart, 14" } } ] },
+                      fondazioni: { title: "Fondazioni", infoLabel: "Info", activities: [ { name: "Fondazione Prada", details: "Arte contemporanea e architettura.", meta: { address: "Largo Isarco, 2" } } ] }
+                  }
+              }
+            },
+            museum4free: {
+              it: {
+                  homepage: { title: "🖼️ #Museum4Free", subtitle: "Arte gratuita a Milano.", buttons: { sempre_gratuiti: "Sempre Gratuiti", prima_domenica: "Prima Domenica del Mese" } },
+                  pages: {
+                      sempre_gratuiti: { title: "Sempre Gratuiti", infoLabel: "Info", activities: [ { name: "Pirelli HangarBicocca", details: "Arte contemporanea monumentale.", meta: { address: "Via Chiese, 2" } }, { name: "Casa Boschi Di Stefano", details: "Collezione del '900.", meta: { address: "Via Giorgio Jan, 15" } } ] },
+                      prima_domenica: { title: "Prima Domenica del Mese", infoLabel: "Info", activities: [ { name: "Pinacoteca di Brera", details: "Gratis la prima domenica.", meta: { address: "Via Brera, 28" } }, { name: "Castello Sforzesco", details: "Musei gratis.", meta: { address: "Piazza Castello" } } ] }
+                  }
+              }
+            },
+            nolo: {
+              it: {
+                  homepage: { title: "NoLo District", subtitle: "North of Loreto.", buttons: { vedere: "Cosa vedere", mangiare: "Dove mangiare" } },
+                  pages: {
+                      vedere: { title: "Cosa Vedere", infoLabel: "Dettagli", activities: [ { name: "Street Art", details: "Murales in Via Pontano.", meta: { address: "Via Pontano" } }, { name: "Piazza Morbegno", details: "Cuore pulsante del quartiere.", meta: { address: "Piazza Morbegno" } } ] },
+                      mangiare: { title: "Dove Mangiare", infoLabel: "Dettagli", activities: [ { name: "Ghe Pensi Mi", details: "Birre e aperitivo.", meta: { address: "Piazza Morbegno, 2" } }, { name: "Le Nove Scodelle", details: "Cinese autentico.", meta: { address: "Viale Monza, 4" } } ] }
+                  }
+              }
+            },
+            mobilita: {
+              it: {
+                  homepage: { title: "Mobilità", subtitle: "Muoversi a Milano.", buttons: { trasporto: "🚇 Metro & Bus", sharing: "🚲 Sharing" } },
+                  pages: {
+                      trasporto: { title: "Trasporto Pubblico", infoLabel: "Info", activities: [ { name: "Biglietto Singolo", details: "€2,20 (90 min). Paga contactless ai tornelli.", meta: { prezzo: "2,20€" } }, { name: "Aeroporti", details: "Linate (M4), Malpensa (Express), Orio (Bus).", meta: { prezzo: "Variabile" } } ] },
+                      sharing: { title: "Sharing", infoLabel: "Info", activities: [ { name: "Car Sharing", details: "Enjoy, ShareNow.", meta: { prezzo: "Al minuto" } }, { name: "Bike/Monopattini", details: "Lime, Dott, BikeMi.", meta: { prezzo: "Al minuto" } } ] }
+                  }
+              }
+            },
+            servizi: {
+              it: {
+                  homepage: { title: "Servizi Utili", subtitle: "Numeri e indirizzi.", buttons: { emergenza: "Emergenze", consolati: "Consolati" } },
+                  pages: {
+                      emergenza: { title: "Numeri Emergenza", infoLabel: "Tel", activities: [ { name: "Numero Unico", details: "Per ogni emergenza.", dates: "112" }, { name: "Guardia Medica", details: "Assistenza non urgente.", dates: "800 193 344" } ] },
+                      consolati: { title: "Consolati", infoLabel: "Indirizzo", activities: [ { name: "USA", details: "Via Principe Amedeo 2" }, { name: "UK", details: "Via San Paolo 7" }, { name: "Francia", details: "Via Mangili 1" }, { name: "Germania", details: "Via Solferino 40" }, { name: "Spagna", details: "Via Fatebenefratelli 26" } ] }
+                  }
+              }
+            },
+            sicurezza: {
+              it: {
+                  homepage: { title: "Sicurezza", subtitle: "Consigli utili.", buttons: { consigli: "Consigli Generali", truffe: "Truffe Comuni" } },
+                  pages: {
+                      consigli: { title: "Consigli", infoLabel: "Info", activities: [ { name: "Borseggiatori", details: "Attenzione in Metro (Centrale/Duomo). Tieni la borsa davanti.", meta: { prezzo: "Importante" } } ] },
+                      truffe: { title: "Truffe", infoLabel: "Info", activities: [ { name: "Braccialetto", details: "Non accettare braccialetti 'regalo' in piazza.", meta: { prezzo: "Evitare" } }, { name: "Petizioni", details: "Evita chi ti ferma per firme/petizioni.", meta: { prezzo: "Evitare" } } ] }
+                  }
+              }
+            }
+        };
+
+        // --- APP LOGIC ---
+
+        function init() {
+            updateWelcomeUI();
+            document.getElementById('lang-switcher').addEventListener('click', (e) => {
+                if(e.target.classList.contains('lang-btn')) {
+                    currentLang = e.target.dataset.lang;
+                    updateWelcomeUI();
+                    if(currentGuide) loadGuide(currentGuide);
+                }
+            });
+            document.getElementById('search-input').addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') handleSearch(e.target.value);
+            });
+        }
+
+        function updateWelcomeUI() {
+            const txt = uiText[currentLang] || uiText.it;
+            const cats = categories[currentLang] || categories.it;
+            
+            document.getElementById('welcome-title').innerText = txt.title;
+            document.getElementById('welcome-subtitle').innerText = txt.subtitle;
+            document.getElementById('search-input').placeholder = txt.subtitle;
+            
+            const container = document.getElementById('welcome-buttons');
+            container.innerHTML = '';
+            
+            Object.keys(cats).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = "w-full btn bg-verde-light text-ottanio py-4 rounded-lg text-lg font-bold mb-2 text-left px-6";
+                btn.innerText = cats[key];
+                btn.onclick = () => loadGuide(key);
+                container.appendChild(btn);
+            });
+
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.lang === currentLang);
+                b.classList.toggle('opacity-60', b.dataset.lang !== currentLang);
+            });
+        }
+
+        function loadGuide(guideId) {
+            currentGuide = guideId;
+            showScreen('guide-content');
+            
+            let data = allGuidesData[guideId][currentLang];
+            let isFallback = false;
+            if(!data) {
+                data = allGuidesData[guideId].it;
+                isFallback = true;
+            }
+
+            const txt = uiText[currentLang] || uiText.it;
+            const el = document.getElementById('guide-content');
+            
+            let navHtml = '';
+            Object.keys(data.homepage.buttons).forEach(key => {
+                navHtml += `<button onclick="loadPage('${key}')" class="w-full btn bg-verde-light text-ottanio py-4 rounded-lg text-lg font-bold mb-2">${data.homepage.buttons[key]}</button>`;
+            });
+
+            // Special AI Button for Art
+            if(guideId === 'arte') {
+                navHtml += `<button onclick="askAI_Art()" class="w-full btn bg-magenta text-bianco py-4 rounded-lg text-lg font-bold mb-2 mt-4 hover:bg-white hover:text-magenta border border-magenta transition-colors">${txt.art_btn}</button>`;
+            }
+
+            let fallbackMsg = isFallback ? `<div class="fallback-notice">${txt.fallback}</div>` : '';
+
+            el.innerHTML = `
+                <div class="flex items-center mb-6 border-b border-ottanio-light/20 pb-4">
+                    <button onclick="goHome()" class="text-verde-light font-bold text-lg mr-4">${txt.home}</button>
+                    <h2 class="text-2xl font-bold text-bianco">${data.homepage.title}</h2>
+                </div>
+                ${fallbackMsg}
+                <div>${navHtml}</div>
+            `;
+        }
+
+        function loadPage(pageId) {
+            let data = allGuidesData[currentGuide][currentLang] || allGuidesData[currentGuide].it;
+            const page = data.pages[pageId];
+            const txt = uiText[currentLang] || uiText.it;
+            
+            // Cache per AI
+            pageActivitiesCache = page.activities;
+
+            const el = document.getElementById('guide-content');
+            let contentHtml = page.activities.map((act, idx) => {
+                let aiBtn = '';
+                if(currentGuide === 'ristoranti') {
+                    aiBtn = `<button onclick="askAI_Restaurant(${idx})" class="mt-3 px-3 py-1 rounded-full text-xs font-bold bg-magenta text-bianco hover:bg-white hover:text-magenta border border-magenta transition-all">${txt.ai_btn}</button>`;
+                }
+
+                let listHtml = '';
+                if(act.listItems) {
+                    listHtml = `<ul class="list-disc ml-2 mt-2 text-sm text-ottanio-light opacity-90">${act.listItems.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+                }
+
+                return `
+                <div class="activity-card bg-white/10 p-4 rounded-lg mb-4 shadow-lg">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold text-lg text-bianco">${act.name}</h3>
+                        ${act.meta && act.meta.prezzo ? `<span class="bg-verde text-bianco text-xs px-2 py-1 rounded-full whitespace-nowrap">${act.meta.prezzo}</span>` : ''}
+                    </div>
+                    <p class="text-sm text-ottanio-light opacity-90 mt-1">${act.details}</p>
+                    ${listHtml}
+                    ${aiBtn}
+                </div>`;
+            }).join('');
+
+            el.innerHTML = `
+                <div class="flex items-center mb-6 border-b border-ottanio-light/20 pb-4">
+                    <button onclick="loadGuide('${currentGuide}')" class="text-verde-light font-bold text-lg mr-4">${txt.back}</button>
+                    <h2 class="text-2xl font-bold text-bianco">${page.title}</h2>
+                </div>
+                <div>${contentHtml}</div>
+            `;
+        }
+
+        function handleSearch(query) {
+            if(!query.trim()) return;
+            showScreen('search-results');
+            const el = document.getElementById('search-results');
+            const txt = uiText[currentLang] || uiText.it;
+            
+            // Logica ricerca semplice
+            let results = [];
+            for (const gId in allGuidesData) {
+                let g = allGuidesData[gId].it; // Cerca solo in IT per semplicità
+                if(g.pages) {
+                    for(const pId in g.pages) {
+                        g.pages[pId].activities.forEach(act => {
+                            if(act.name.toLowerCase().includes(query.toLowerCase())) {
+                                results.push({...act, guide: g.homepage.title});
+                            }
+                        });
+                    }
+                }
+            }
+            
+            let html = results.length > 0 
+                ? results.map(r => `<div class="activity-card bg-white/10 p-4 mb-2 rounded"><h3 class="font-bold text-bianco">${r.name}</h3><p class="text-xs text-verde-light">${r.guide}</p></div>`).join('')
+                : `<div class="text-center text-ottanio-light">${txt.no_results}</div>`;
+
+            el.innerHTML = `
+                <div class="flex items-center mb-6 border-b border-ottanio-light/20 pb-4">
+                    <button onclick="goHome()" class="text-verde-light font-bold text-lg mr-4">${txt.home}</button>
+                    <h2 class="text-2xl font-bold text-bianco">Search: "${query}"</h2>
+                </div>
+                <div>${html}</div>
+            `;
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+        function goHome() { showScreen('welcome'); currentGuide = null; }
+
+        // --- AI FUNCTIONS (MODIFICATE PER WIP) ---
+
+        function askAI_Restaurant(idx) {
+            const act = pageActivitiesCache[idx];
+            if(!act) return;
+            openAiModal(act.name, []); // Nessun bottone reale per ora
+        }
+
+        function askAI_Art() {
+            openAiModal("Art Planner", []);
+        }
+
+        function openAiModal(title, buttons) {
+            const modal = document.getElementById('ai-modal');
+            document.getElementById('ai-title').innerText = title;
+            document.getElementById('ai-result').classList.remove('hidden'); // Mostra subito il risultato
+            document.getElementById('ai-actions').innerHTML = ''; // Niente azioni
+            
+            // Qui inseriamo il messaggio WIP direttamente
+            callGemini(); 
+            
+            modal.classList.add('active');
+        }
+
+        function closeAiModal() {
+            document.getElementById('ai-modal').classList.remove('active');
+        }
+
+        // Funzione modificata per mostrare solo il messaggio WIP
+        async function callGemini(prompt) {
+            const out = document.getElementById('ai-text');
+            document.getElementById('ai-result').classList.remove('hidden');
+            
+            // Messaggio "In via di implementazione"
+            out.innerHTML = `
+                <div class="p-4 bg-verde-light text-ottanio rounded-lg border border-verde text-center">
+                    <h3 class="font-bold text-lg mb-2">🚧 Funzionalità in arrivo</h3>
+                    <p>Stiamo lavorando per integrare l'Intelligenza Artificiale.</p>
+                    <p class="text-sm mt-2 opacity-80">Riprova tra qualche giorno!</p>
+                </div>
+            `;
+        }
+
+        // INIT
+        init();
+
+    </script>
+</body>
+</html>
